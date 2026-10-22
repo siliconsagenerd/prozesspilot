@@ -79,3 +79,107 @@ def test_high_confidence_does_not_auto_approve_or_send():
     called = [c.args[0] for c in mock_call.call_args_list]
     assert "send_email_mock" not in called
     assert "crm_update_mock" not in called
+
+
+def _run_id_for(body="Frage zum ErgoChair?", email="anna@example.de"):
+    r = client.post("/api/inquiries", json={"body": body, "customer_email": email})
+    assert r.status_code == 200
+    iid = r.json()["id"]
+    r2 = client.post(f"/api/inquiries/{iid}/run")
+    assert r2.status_code == 200
+    return r2.json()["run_id"]
+
+
+def test_ready_for_review_does_not_trigger_mock_send():
+    from sqlalchemy import select
+
+    from prozesspilot.config import settings
+    from prozesspilot.db.models import AuditEvent
+    from prozesspilot.db.session import db_session
+
+    run_id = _run_id_for()
+    run = client.get(f"/api/runs/{run_id}").json()
+    assert run["state"] == "ReadyForReview"
+    assert run["requires_approval"] is False
+    assert run["approvals"] == []
+    assert not (settings.mock_email_dir / f"{run_id}.json").exists()
+
+    with db_session() as s:
+        events = s.execute(
+            select(AuditEvent).where(
+                AuditEvent.run_id == run_id,
+                AuditEvent.event_type == "approved_and_mock_sent",
+            )
+        ).scalars().all()
+    assert events == []
+
+
+def test_explicit_approval_records_approval_and_mock_send():
+    from sqlalchemy import select
+
+    from prozesspilot.config import settings
+    from prozesspilot.db.models import AuditEvent
+    from prozesspilot.db.session import db_session
+
+    run_id = _run_id_for()
+    r = client.post(f"/api/runs/{run_id}/approve", json={"action": "approve"})
+    assert r.status_code == 200
+
+    run = client.get(f"/api/runs/{run_id}").json()
+    assert run["state"] == "Approved"
+    assert len(run["approvals"]) == 1
+    assert (settings.mock_email_dir / f"{run_id}.json").exists()
+
+    with db_session() as s:
+        events = s.execute(
+            select(AuditEvent).where(
+                AuditEvent.run_id == run_id,
+                AuditEvent.event_type == "approved_and_mock_sent",
+            )
+        ).scalars().all()
+    assert len(events) == 1
+
+
+def test_repeated_approval_does_not_duplicate_mock_outbound():
+    from sqlalchemy import select
+
+    from prozesspilot.config import settings
+    from prozesspilot.db.models import AuditEvent
+    from prozesspilot.db.session import db_session
+
+    run_id = _run_id_for()
+    first = client.post(f"/api/runs/{run_id}/approve", json={"action": "approve"})
+    assert first.status_code == 200
+
+    email_file = settings.mock_email_dir / f"{run_id}.json"
+    assert email_file.exists()
+    mtime = email_file.stat().st_mtime
+
+    with db_session() as s:
+        before = len(
+            s.execute(
+                select(AuditEvent).where(
+                    AuditEvent.run_id == run_id,
+                    AuditEvent.event_type == "approved_and_mock_sent",
+                )
+            ).scalars().all()
+        )
+
+    second = client.post(f"/api/runs/{run_id}/approve", json={"action": "approve"})
+    assert second.status_code == 200
+
+    run = client.get(f"/api/runs/{run_id}").json()
+    assert run["state"] == "Approved"
+    assert len(run["approvals"]) == 1
+    assert email_file.stat().st_mtime == mtime
+
+    with db_session() as s:
+        after = len(
+            s.execute(
+                select(AuditEvent).where(
+                    AuditEvent.run_id == run_id,
+                    AuditEvent.event_type == "approved_and_mock_sent",
+                )
+            ).scalars().all()
+        )
+    assert after == before

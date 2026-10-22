@@ -33,7 +33,7 @@ class OpenAIProvider:
         if json_mode:
             payload["response_format"] = {"type": "json_object"}
         t0 = time.time()
-        async with httpx.AsyncClient(timeout=60) as c:
+        async with httpx.AsyncClient(timeout=settings.latency_sla_seconds) as c:
             r = await c.post(
                 f"{self.base_url}/chat/completions",
                 headers={"Authorization": f"Bearer {self.api_key}"},

@@ -128,9 +128,20 @@ def list_inquiries():
 
 
 @app.post("/api/inquiries/{inquiry_id}/run")
-async def run(inquiry_id: str, request: Request, prompt_variant: str = "improved"):
+async def run(
+    inquiry_id: str,
+    request: Request,
+    prompt_variant: str = "improved",
+    classify_max_tokens: int | None = None,
+    draft_max_tokens: int | None = None,
+):
     _rate_limit(request.client.host if request.client else "anon")
-    run_id = await run_workflow(inquiry_id, prompt_variant=prompt_variant)
+    run_id = await run_workflow(
+        inquiry_id,
+        prompt_variant=prompt_variant,
+        classify_max_tokens=classify_max_tokens,
+        draft_max_tokens=draft_max_tokens,
+    )
     return {"run_id": run_id}
 
 

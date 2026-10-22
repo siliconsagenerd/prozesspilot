@@ -11,6 +11,7 @@ from prozesspilot.config import settings
 from prozesspilot.db.models import Evaluation, Inquiry, WorkflowRun
 from prozesspilot.db.session import db_session
 from prozesspilot.eval.cases import CASES
+from prozesspilot.eval_preflight import preflight_evaluation
 
 
 def evaluate_abstention(deliberate_abstention: bool | None, citations_present: bool) -> bool:
@@ -55,6 +56,12 @@ def evaluate_source_ids(
 async def run_eval(prompt_variant: str = "improved", provider_override: str | None = None) -> dict:
     if provider_override:
         settings.provider = provider_override  # type: ignore
+    preflight_evaluation(
+        settings,
+        CASES,
+        {prompt_variant: prompt_variant},
+        {"max_tokens_per_call": settings.max_tokens_per_call},
+    )
     results = []
     for case in CASES:
         # Validate case contract strictly
@@ -92,7 +99,11 @@ async def run_eval(prompt_variant: str = "improved", provider_override: str | No
             from prozesspilot.db.models import Draft
             d = s.execute(select(Draft).where(Draft.run_id == run_id)).scalar_one_or_none()
             citations_present = bool(d and d.citations)
-            citation_keys = [c.get("title") for c in (d.citations if d and d.citations else []) if isinstance(c, dict)]
+            citation_keys = [
+                c.get("source_key") or c.get("title")
+                for c in (d.citations if d and d.citations else [])
+                if isinstance(c, dict)
+            ]
 
             deliberate_abstention = case["deliberate_abstention"]
             abstention_correct = evaluate_abstention(deliberate_abstention, citations_present)

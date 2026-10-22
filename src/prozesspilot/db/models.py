@@ -45,6 +45,7 @@ class Customer(Base):
 class KnowledgeSource(Base):
     __tablename__ = "knowledge_sources"
     id: Mapped[str] = mapped_column(String(36), primary_key=True, default=new_id)
+    source_key: Mapped[str | None] = mapped_column(String(120), unique=True, nullable=True)
     title: Mapped[str] = mapped_column(String(300))
     category: Mapped[str] = mapped_column(String(60))  # product/policy/faq/escalation
     content: Mapped[str] = mapped_column(Text)

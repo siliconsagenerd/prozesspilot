@@ -42,10 +42,20 @@ def seed():
         for f in kb_files:
             items = json.loads(f.read_text(encoding="utf-8"))
             for k in items:
-                exists = s.execute(
-                    select(KnowledgeSource).where(KnowledgeSource.title == k["title"])
-                ).scalar_one_or_none()
-                if exists:
+                key = k.get("source_key")
+                if key:
+                    exists = s.execute(
+                        select(KnowledgeSource).where(KnowledgeSource.source_key == key)
+                    ).scalar_one_or_none()
+                else:
+                    exists = None
+                if exists is None:
+                    exists = s.execute(
+                        select(KnowledgeSource).where(KnowledgeSource.title == k["title"])
+                    ).scalar_one_or_none()
+                if exists is not None:
+                    if exists.source_key is None and key:
+                        exists.source_key = key
                     continue
                 s.add(KnowledgeSource(**k))
     click.echo("seeded")

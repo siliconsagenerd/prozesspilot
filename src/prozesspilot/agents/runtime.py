@@ -40,7 +40,12 @@ _register_tools()
 CLASSIFICATIONS = ["product_question", "complaint", "order_status", "quote_request", "spam", "unclear"]
 
 
-async def run_workflow(inquiry_id: str, prompt_variant: str = "improved") -> str:
+async def run_workflow(
+    inquiry_id: str,
+    prompt_variant: str = "improved",
+    classify_max_tokens: int | None = None,
+    draft_max_tokens: int | None = None,
+) -> str:
     """Run full workflow for an inquiry. Returns run_id."""
     with db_session() as s:
         inq = s.get(Inquiry, inquiry_id)
@@ -78,7 +83,9 @@ async def run_workflow(inquiry_id: str, prompt_variant: str = "improved") -> str
             inq_body = inq.body
             inq.subject = inq.subject
         cls_result = await classify_inquiry(
-            inq_body or "", prompt_variant=prompt_variant, max_tokens=settings.max_tokens_per_call
+            inq_body or "",
+            prompt_variant=prompt_variant,
+            max_tokens=classify_max_tokens if classify_max_tokens is not None else settings.max_tokens_per_call,
         )
         classification = cls_result["classification"]
         confidence = float(cls_result["confidence"])
@@ -163,7 +170,7 @@ async def run_workflow(inquiry_id: str, prompt_variant: str = "improved") -> str
             input_summary=(inq_body or "")[:200],
             output_summary=f"{len(kb_results)} sources",
             tool_calls=[{"tool": "kb_search", "input": {"query": (inq_body or "")[:200]}, "output": kb}],
-            citations=[{"id": r["id"], "title": r["title"]} for r in kb_results],
+            citations=[{"id": r["id"], "source_key": r.get("source_key"), "title": r["title"]} for r in kb_results],
             latency_ms=latency,
         )
     except Exception as e:  # noqa: BLE001
@@ -186,7 +193,7 @@ async def run_workflow(inquiry_id: str, prompt_variant: str = "improved") -> str
             customer=customer_ctx,
             kb_results=kb_results,
             prompt_variant=prompt_variant,
-            max_tokens=settings.max_tokens_per_call,
+            max_tokens=draft_max_tokens if draft_max_tokens is not None else settings.max_tokens_per_call,
         )
         draft_text = draft_res["text"]
         reasoning = draft_res.get("reasoning", "")
@@ -203,7 +210,7 @@ async def run_workflow(inquiry_id: str, prompt_variant: str = "improved") -> str
             prompt_version=f"draft-{prompt_variant}",
             input_summary=f"classification={classification}",
             output_summary=draft_text[:400],
-            citations=[{"id": r["id"], "title": r["title"]} for r in kb_results],
+            citations=[{"id": r["id"], "source_key": r.get("source_key"), "title": r["title"]} for r in kb_results],
             confidence=confidence,
             latency_ms=latency,
             tokens_in=draft_res.get("tokens_in", 0),
@@ -221,7 +228,7 @@ async def run_workflow(inquiry_id: str, prompt_variant: str = "improved") -> str
             Draft(
                 run_id=run_id,
                 original_text=draft_text,
-                citations=[{"id": r["id"], "title": r["title"]} for r in kb_results],
+                citations=[{"id": r["id"], "source_key": r.get("source_key"), "title": r["title"]} for r in kb_results],
                 confidence=confidence,
                 reasoning=reasoning,
             )
@@ -331,6 +338,12 @@ async def approve_run(
 
     with db_session() as s:
         run = s.get(WorkflowRun, run_id)
+        if run is None:
+            raise ValueError("run not found")
+        if run.state == "Approved":
+            # Repeated approval is a no-op: outbound mock actions were already recorded.
+            audit(run_id, "approval_duplicate_ignored", actor=actor, payload={"reason": reason})
+            return
         draft = s.execute(select(Draft).where(Draft.run_id == run_id)).scalar_one_or_none()
         if draft is None:
             raise ValueError("no draft")

@@ -7,7 +7,7 @@
     "expected_routing": "ready_for_review",
     "deliberate_abstention": false,
     "acceptable_sources": [
-      "Produkt: ErgoChair 3000"
+      "product.ergochair_3000"
     ]
   },
   {
@@ -18,9 +18,9 @@
     "expected_routing": "requires_human_approval",
     "deliberate_abstention": false,
     "acceptable_sources": [
-      "Produkt: DeskPro Monitorarm",
-      "Rückgabe- und Beschwerdepolitik",
-      "Eskalationsrichtlinie"
+      "product.deskpro_monitor_arm",
+      "policy.returns_and_complaints",
+      "policy.escalation"
     ]
   },
   {
@@ -31,7 +31,7 @@
     "expected_routing": "ready_for_review",
     "deliberate_abstention": false,
     "acceptable_sources": [
-      "Bestellstatus-Erklärung"
+      "policy.order_status"
     ]
   },
   {
@@ -42,8 +42,8 @@
     "expected_routing": "requires_human_approval",
     "deliberate_abstention": false,
     "acceptable_sources": [
-      "Angebotsanfrage-Prozess",
-      "Produkt: ErgoChair 3000"
+      "process.quote_request",
+      "product.ergochair_3000"
     ]
   },
   {
@@ -72,7 +72,7 @@
     "expected_routing": "ready_for_review",
     "deliberate_abstention": false,
     "acceptable_sources": [
-      "Produkt: ErgoChair 3000"
+      "product.ergochair_3000"
     ]
   },
   {
@@ -83,9 +83,9 @@
     "expected_routing": "requires_human_approval",
     "deliberate_abstention": false,
     "acceptable_sources": [
-      "Rückgabe- und Beschwerdepolitik",
-      "Produkt: DeskPro Monitorarm",
-      "Eskalationsrichtlinie"
+      "policy.returns_and_complaints",
+      "product.deskpro_monitor_arm",
+      "policy.escalation"
     ]
   },
   {
@@ -96,7 +96,7 @@
     "expected_routing": "ready_for_review",
     "deliberate_abstention": false,
     "acceptable_sources": [
-      "Bestellstatus-Erklärung"
+      "policy.order_status"
     ]
   },
   {
@@ -107,8 +107,8 @@
     "expected_routing": "requires_human_approval",
     "deliberate_abstention": false,
     "acceptable_sources": [
-      "Angebotsanfrage-Prozess",
-      "Produkt: DeskPro Monitorarm"
+      "process.quote_request",
+      "product.deskpro_monitor_arm"
     ]
   },
   {
@@ -119,8 +119,8 @@
     "expected_routing": "ready_for_review",
     "deliberate_abstention": false,
     "acceptable_sources": [
-      "Rückgabe- und Beschwerdepolitik",
-      "Produkt: ErgoChair 3000"
+      "policy.returns_and_complaints",
+      "product.ergochair_3000"
     ]
   },
   {
@@ -131,8 +131,8 @@
     "expected_routing": "requires_human_approval",
     "deliberate_abstention": false,
     "acceptable_sources": [
-      "Rückgabe- und Beschwerdepolitik",
-      "Eskalationsrichtlinie"
+      "policy.returns_and_complaints",
+      "policy.escalation"
     ]
   }
 ]
