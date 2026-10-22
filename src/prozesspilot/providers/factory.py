@@ -23,26 +23,33 @@ def get_provider(name: str | None = None):
 
 
 def provider_chain() -> list:
+    """Return explicit provider chain.
+
+    Only uses explicitly configured settings.provider and, if non-empty,
+    settings.fallback_provider. No silent or automatic fallback to Ollama.
+    """
     chain = [get_provider(settings.provider)]
-    if settings.fallback_provider:
-        try:
-            chain.append(get_provider(settings.fallback_provider))
-        except Exception:
-            pass
-    # Always allow ollama as last resort if not already
-    if not any(p.name == "ollama" for p in chain):
-        try:
-            chain.append(OllamaProvider())
-        except Exception:
-            pass
+    fb = (settings.fallback_provider or "").strip()
+    if fb:
+        chain.append(get_provider(fb))
     return chain
 
 
-async def complete_with_fallback(prompt: str, system: str = "", json_mode: bool = False, max_tokens: int | None = None):
+async def complete_with_fallback(
+    prompt: str,
+    system: str = "",
+    json_mode: bool = False,
+    max_tokens: int | None = None,
+):
     last_err = None
     for p in provider_chain():
         try:
-            return await p.complete(prompt, system=system, json_mode=json_mode, max_tokens=max_tokens)
+            return await p.complete(
+                prompt,
+                system=system,
+                json_mode=json_mode,
+                max_tokens=max_tokens,
+            )
         except Exception as e:  # noqa: BLE001
             last_err = e
             continue

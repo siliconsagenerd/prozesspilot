@@ -1,14 +1,138 @@
 [
-  {"id": "E01", "body": "Hallo, wo kann ich den ErgoChair 3000 in Grau bestellen und wie lange dauert die Lieferung?", "customer_email": "anna.mueller@example.de", "expected_classification": "product_question", "expected_routing": "ready_for_review"},
-  {"id": "E02", "body": "Mein DeskPro Monitorarm ist nach 2 Wochen kaputt gegangen, ich bin sehr unzufrieden!", "customer_email": "clara.weber@example.de", "expected_classification": "complaint", "expected_routing": "requires_human_approval"},
-  {"id": "E03", "body": "Können Sie mir den Status meiner Bestellung #12345 mitteilen?", "customer_email": "bernd.schmidt@example.de", "expected_classification": "order_status", "expected_routing": "ready_for_review"},
-  {"id": "E04", "body": "Wir benötigen ein Angebot für 20 ErgoChair 3000 für unser Büro, Lieferung nach München.", "customer_email": "bernd.schmidt@example.de", "expected_classification": "quote_request", "expected_routing": "requires_human_approval"},
-  {"id": "E05", "body": "GEWINNEN SIE EIN IPHONE!!! Klicken Sie hier: http://spam.example", "customer_email": null, "expected_classification": "spam", "expected_routing": "requires_human_approval"},
-  {"id": "E06", "body": "Hallo, ich weiß nicht genau was ich brauche, können Sie mich beraten?", "customer_email": "david.koch@example.de", "expected_classification": "unclear", "expected_routing": "requires_human_approval"},
-  {"id": "E07", "body": "Ist der ErgoChair 3000 für Personen über 120 kg geeignet?", "customer_email": "anna.mueller@example.de", "expected_classification": "product_question", "expected_routing": "ready_for_review"},
-  {"id": "E08", "body": "Die Rücksendung meines Monitorarms hat nicht funktioniert, ich warte seit 3 Wochen auf Erstattung.", "customer_email": "clara.weber@example.de", "expected_classification": "complaint", "expected_routing": "requires_human_approval"},
-  {"id": "E09", "body": "Wann kommt meine Lieferung an, ich habe Express gewählt?", "customer_email": "bernd.schmidt@example.de", "expected_classification": "order_status", "expected_routing": "ready_for_review"},
-  {"id": "E10", "body": "Anfrage für 50 DeskPro Monitorarme mit Mengenrabatt für Firma XY.", "customer_email": "bernd.schmidt@example.de", "expected_classification": "quote_request", "expected_routing": "requires_human_approval"},
-  {"id": "E11", "body": "Kann ich den ErgoChair zurückgeben, wenn er mir nicht gefällt?", "customer_email": "anna.mueller@example.de", "expected_classification": "product_question", "expected_routing": "ready_for_review"},
-  {"id": "E12", "body": "Das Produkt kam beschädigt an, ich möchte Ersatz.", "customer_email": "david.koch@example.de", "expected_classification": "complaint", "expected_routing": "requires_human_approval"}
+  {
+    "id": "E01",
+    "body": "Hallo, wo kann ich den ErgoChair 3000 in Grau bestellen und wie lange dauert die Lieferung?",
+    "customer_email": "anna.mueller@example.de",
+    "expected_classification": "product_question",
+    "expected_routing": "ready_for_review",
+    "deliberate_abstention": false,
+    "acceptable_sources": [
+      "0c347390-6506-4bad-a890-180dcc56aa96"
+    ]
+  },
+  {
+    "id": "E02",
+    "body": "Mein DeskPro Monitorarm ist nach 2 Wochen kaputt gegangen, ich bin sehr unzufrieden!",
+    "customer_email": "clara.weber@example.de",
+    "expected_classification": "complaint",
+    "expected_routing": "requires_human_approval",
+    "deliberate_abstention": false,
+    "acceptable_sources": [
+      "97f52881-4b83-404b-aae1-d3f6c8968049",
+      "c75917b8-fe42-4e2b-8f11-10656db2472b",
+      "4e6f828c-0f6b-43ff-a8a8-19ac24ef479a"
+    ]
+  },
+  {
+    "id": "E03",
+    "body": "Können Sie mir den Status meiner Bestellung #12345 mitteilen?",
+    "customer_email": "bernd.schmidt@example.de",
+    "expected_classification": "order_status",
+    "expected_routing": "ready_for_review",
+    "deliberate_abstention": false,
+    "acceptable_sources": [
+      "73e20825-31eb-4eef-9fca-0404a02e4c68"
+    ]
+  },
+  {
+    "id": "E04",
+    "body": "Wir benötigen ein Angebot für 20 ErgoChair 3000 für unser Büro, Lieferung nach München.",
+    "customer_email": "bernd.schmidt@example.de",
+    "expected_classification": "quote_request",
+    "expected_routing": "requires_human_approval",
+    "deliberate_abstention": false,
+    "acceptable_sources": [
+      "8ed092e8-b9ec-4129-a4bb-accc36d86c8e",
+      "0c347390-6506-4bad-a890-180dcc56aa96"
+    ]
+  },
+  {
+    "id": "E05",
+    "body": "GEWINNEN SIE EIN IPHONE!!! Klicken Sie hier: http://spam.example",
+    "customer_email": null,
+    "expected_classification": "spam",
+    "expected_routing": "requires_human_approval",
+    "deliberate_abstention": true,
+    "acceptable_sources": []
+  },
+  {
+    "id": "E06",
+    "body": "Hallo, ich weiß nicht genau was ich brauche, können Sie mich beraten?",
+    "customer_email": "david.koch@example.de",
+    "expected_classification": "unclear",
+    "expected_routing": "requires_human_approval",
+    "deliberate_abstention": true,
+    "acceptable_sources": []
+  },
+  {
+    "id": "E07",
+    "body": "Ist der ErgoChair 3000 für Personen über 120 kg geeignet?",
+    "customer_email": "anna.mueller@example.de",
+    "expected_classification": "product_question",
+    "expected_routing": "ready_for_review",
+    "deliberate_abstention": false,
+    "acceptable_sources": [
+      "0c347390-6506-4bad-a890-180dcc56aa96"
+    ]
+  },
+  {
+    "id": "E08",
+    "body": "Die Rücksendung meines Monitorarms hat nicht funktioniert, ich warte seit 3 Wochen auf Erstattung.",
+    "customer_email": "clara.weber@example.de",
+    "expected_classification": "complaint",
+    "expected_routing": "requires_human_approval",
+    "deliberate_abstention": false,
+    "acceptable_sources": [
+      "c75917b8-fe42-4e2b-8f11-10656db2472b",
+      "97f52881-4b83-404b-aae1-d3f6c8968049",
+      "4e6f828c-0f6b-43ff-a8a8-19ac24ef479a"
+    ]
+  },
+  {
+    "id": "E09",
+    "body": "Wann kommt meine Lieferung an, ich habe Express gewählt?",
+    "customer_email": "bernd.schmidt@example.de",
+    "expected_classification": "order_status",
+    "expected_routing": "ready_for_review",
+    "deliberate_abstention": false,
+    "acceptable_sources": [
+      "73e20825-31eb-4eef-9fca-0404a02e4c68"
+    ]
+  },
+  {
+    "id": "E10",
+    "body": "Anfrage für 50 DeskPro Monitorarme mit Mengenrabatt für Firma XY.",
+    "customer_email": "bernd.schmidt@example.de",
+    "expected_classification": "quote_request",
+    "expected_routing": "requires_human_approval",
+    "deliberate_abstention": false,
+    "acceptable_sources": [
+      "8ed092e8-b9ec-4129-a4bb-accc36d86c8e",
+      "97f52881-4b83-404b-aae1-d3f6c8968049"
+    ]
+  },
+  {
+    "id": "E11",
+    "body": "Kann ich den ErgoChair zurückgeben, wenn er mir nicht gefällt?",
+    "customer_email": "anna.mueller@example.de",
+    "expected_classification": "product_question",
+    "expected_routing": "ready_for_review",
+    "deliberate_abstention": false,
+    "acceptable_sources": [
+      "c75917b8-fe42-4e2b-8f11-10656db2472b",
+      "0c347390-6506-4bad-a890-180dcc56aa96"
+    ]
+  },
+  {
+    "id": "E12",
+    "body": "Das Produkt kam beschädigt an, ich möchte Ersatz.",
+    "customer_email": "david.koch@example.de",
+    "expected_classification": "complaint",
+    "expected_routing": "requires_human_approval",
+    "deliberate_abstention": false,
+    "acceptable_sources": [
+      "c75917b8-fe42-4e2b-8f11-10656db2472b",
+      "4e6f828c-0f6b-43ff-a8a8-19ac24ef479a"
+    ]
+  }
 ]
