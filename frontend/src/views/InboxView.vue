@@ -1,26 +1,26 @@
 <template>
   <section>
     <div class="card compose">
-      <h2>Neue Anfrage</h2>
-      <textarea v-model="body" placeholder="Anfrage-Text (Deutsch)…" rows="4"></textarea>
-      <input v-model="email" placeholder="Kunden-E-Mail (optional)" />
+      <h2>{{ t('inbox.title') }}</h2>
+      <textarea v-model="body" :placeholder="t('inbox.bodyPlaceholder')" rows="4"></textarea>
+      <input v-model="email" :placeholder="t('inbox.emailPlaceholder')" />
       <div class="actions">
-        <button @click="submit" :disabled="loading || !body.trim()">
+        <button @click="submit" :disabled="loading || !body.trim()" :aria-busy="loading">
           <span v-if="loading" class="spinner"></span>
-          {{ loading ? "Startet…" : "Einreichen & Workflow starten" }}
+          {{ loading ? t('inbox.submitting') : t('inbox.submit') }}
         </button>
-        <p v-if="error" class="error">{{ error }}</p>
+        <p v-if="error" class="error" role="alert">{{ error }}</p>
       </div>
     </div>
 
-    <h2 style="margin-top:2rem">Inbox</h2>
-    <div v-if="loadingList" class="skeleton">Laden…</div>
-    <div v-else-if="!inquiries.length" class="empty">Keine Anfragen. Reiche oben eine ein.</div>
+    <h2 style="margin-top:2rem">{{ t('inbox.listTitle') }}</h2>
+    <div v-if="loadingList" class="skeleton">{{ t('inbox.loading') }}</div>
+    <div v-else-if="!inquiries.length" class="empty">{{ t('inbox.empty') }}</div>
     <div v-else class="list">
       <div v-for="i in inquiries" :key="i.id" class="row">
         <span class="badge" :class="statusClass(i.status)">{{ i.status }}</span>
         <span class="preview">{{ i.body }}</span>
-        <router-link v-if="i.run_id" :to="`/runs/${i.run_id}`" class="open">Öffnen →</router-link>
+        <router-link v-if="i.run_id" :to="`/runs/${i.run_id}`" class="open">{{ t("inbox.open") }}</router-link>
       </div>
     </div>
   </section>
@@ -28,6 +28,7 @@
 <script setup lang="ts">
 import { ref, onMounted } from "vue";
 import { API } from "../api";
+import { t } from "../i18n";
 
 const body = ref("");
 const email = ref("");
@@ -52,7 +53,7 @@ async function load() {
 }
 
 async function submit() {
-  if (!body.value.trim()) return;
+  if (!body.value.trim() || loading.value) return;
   loading.value = true; error.value = "";
   try {
     const r = await API.createInquiry(body.value, "", email.value || null);

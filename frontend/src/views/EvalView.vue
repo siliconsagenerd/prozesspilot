@@ -1,28 +1,29 @@
 <template>
   <section>
     <div class="title-row">
-      <h2>Evaluation</h2>
-      <button @click="runEval" :disabled="loading">
+      <h2>{{ t('eval.title') }}</h2>
+      <button @click="runEval" :disabled="loading" :aria-busy="loading">
         <span v-if="loading" class="spinner"></span>
-        {{ loading ? "Läuft…" : "Eval (improved prompt) starten" }}
+        {{ loading ? t('eval.running') : t('eval.run') }}
       </button>
     </div>
+    <p v-if="error" class="error" role="alert">{{ error }}</p>
 
     <div v-if="agg" class="card">
       <div class="metrics">
-        <div class="metric"><span class="label">N</span><span>{{ agg.n }}</span></div>
-        <div class="metric"><span class="label">Provider</span><span>{{ agg.provider }}</span></div>
-        <div class="metric"><span class="label">Klassifikation</span><span>{{ pct(agg.classification_accuracy) }}</span></div>
-        <div class="metric"><span class="label">Routing</span><span>{{ pct(agg.routing_accuracy) }}</span></div>
-        <div class="metric"><span class="label">Zitierquote</span><span>{{ pct(agg.citation_rate) }}</span></div>
-        <div class="metric"><span class="label">Ø Latenz</span><span class="mono">{{ agg.avg_latency_ms }} ms</span></div>
-        <div class="metric"><span class="label">Gesamtkosten</span><span class="mono">{{ agg.total_cost_usd }} USD</span></div>
+        <div class="metric"><span class="label">{{ t('eval.n') }}</span><span>{{ agg.n }}</span></div>
+        <div class="metric"><span class="label">{{ t('eval.provider') }}</span><span>{{ agg.provider }}</span></div>
+        <div class="metric"><span class="label">{{ t('eval.classification') }}</span><span>{{ pct(agg.classification_accuracy) }}</span></div>
+        <div class="metric"><span class="label">{{ t('eval.routing') }}</span><span>{{ pct(agg.routing_accuracy) }}</span></div>
+        <div class="metric"><span class="label">{{ t('eval.citations') }}</span><span>{{ pct(agg.citation_rate) }}</span></div>
+        <div class="metric"><span class="label">{{ t('eval.latency') }}</span><span class="mono">{{ agg.avg_latency_ms }} ms</span></div>
+        <div class="metric"><span class="label">{{ t('eval.cost') }}</span><span class="mono">{{ agg.total_cost_usd }} USD</span></div>
       </div>
     </div>
 
     <div v-if="agg" class="table-wrap">
       <table>
-        <thead><tr><th>Case</th><th>Pred</th><th>Exp</th><th>OK</th><th>Routing OK</th><th>Zitate</th></tr></thead>
+        <thead><tr><th>{{ t('eval.case') }}</th><th>{{ t('eval.pred') }}</th><th>{{ t('eval.exp') }}</th><th>{{ t('eval.ok') }}</th><th>{{ t('eval.routingOk') }}</th><th>{{ t('eval.quotes') }}</th></tr></thead>
         <tbody>
           <tr v-for="r in agg.results" :key="r.case_id">
             <td class="mono">{{ r.case_id }}</td>
@@ -40,13 +41,17 @@
 <script setup lang="ts">
 import { ref } from "vue";
 import { API } from "../api";
+import { t } from "../i18n";
 
 const loading = ref(false);
 const agg = ref<any>(null);
+const error = ref("");
 
 async function runEval() {
-  loading.value = true;
+  if (loading.value) return;
+  loading.value = true; error.value = "";
   try { agg.value = await API.evalRun("improved"); }
+  catch (e: any) { error.value = e?.message || "Evaluation fehlgeschlagen."; }
   finally { loading.value = false; }
 }
 
