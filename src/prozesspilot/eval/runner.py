@@ -92,13 +92,13 @@ async def run_eval(prompt_variant: str = "improved", provider_override: str | No
             from prozesspilot.db.models import Draft
             d = s.execute(select(Draft).where(Draft.run_id == run_id)).scalar_one_or_none()
             citations_present = bool(d and d.citations)
-            citation_ids = [c.get("id") for c in (d.citations if d and d.citations else []) if isinstance(c, dict)]
+            citation_keys = [c.get("title") for c in (d.citations if d and d.citations else []) if isinstance(c, dict)]
 
             deliberate_abstention = case["deliberate_abstention"]
             abstention_correct = evaluate_abstention(deliberate_abstention, citations_present)
 
             acceptable_sources = case["acceptable_sources"]
-            sources_correct = evaluate_source_ids(acceptable_sources, citation_ids)
+            sources_correct = evaluate_source_ids(acceptable_sources, citation_keys)
 
             row = Evaluation(
                 case_id=case["id"],
@@ -128,7 +128,7 @@ async def run_eval(prompt_variant: str = "improved", provider_override: str | No
 
             row.notes = (
                 f"deliberate_abstention={deliberate_abstention}; abstention_correct={abstention_correct}; "
-                f"acceptable_sources={acceptable_sources}; sources_found={citation_ids}; "
+                f"acceptable_sources={acceptable_sources}; sources_found={citation_keys}; "
                 f"sources_correct={sources_correct}"
             )
             s.add(row)
@@ -146,7 +146,7 @@ async def run_eval(prompt_variant: str = "improved", provider_override: str | No
                     "deliberate_abstention": deliberate_abstention,
                     "abstention_correct": abstention_correct,
                     "acceptable_sources": acceptable_sources,
-                    "sources_found": citation_ids,
+                    "sources_found": citation_keys,
                     "sources_correct": sources_correct,
                     "latency_ms": r.total_latency_ms,
                     "cost_usd": r.total_cost_usd,

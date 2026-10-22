@@ -7,7 +7,7 @@
     "expected_routing": "ready_for_review",
     "deliberate_abstention": false,
     "acceptable_sources": [
-      "0c347390-6506-4bad-a890-180dcc56aa96"
+      "Produkt: ErgoChair 3000"
     ]
   },
   {
@@ -18,9 +18,9 @@
     "expected_routing": "requires_human_approval",
     "deliberate_abstention": false,
     "acceptable_sources": [
-      "97f52881-4b83-404b-aae1-d3f6c8968049",
-      "c75917b8-fe42-4e2b-8f11-10656db2472b",
-      "4e6f828c-0f6b-43ff-a8a8-19ac24ef479a"
+      "Produkt: DeskPro Monitorarm",
+      "Rückgabe- und Beschwerdepolitik",
+      "Eskalationsrichtlinie"
     ]
   },
   {
@@ -31,7 +31,7 @@
     "expected_routing": "ready_for_review",
     "deliberate_abstention": false,
     "acceptable_sources": [
-      "73e20825-31eb-4eef-9fca-0404a02e4c68"
+      "Bestellstatus-Erklärung"
     ]
   },
   {
@@ -42,8 +42,8 @@
     "expected_routing": "requires_human_approval",
     "deliberate_abstention": false,
     "acceptable_sources": [
-      "8ed092e8-b9ec-4129-a4bb-accc36d86c8e",
-      "0c347390-6506-4bad-a890-180dcc56aa96"
+      "Angebotsanfrage-Prozess",
+      "Produkt: ErgoChair 3000"
     ]
   },
   {
@@ -72,7 +72,7 @@
     "expected_routing": "ready_for_review",
     "deliberate_abstention": false,
     "acceptable_sources": [
-      "0c347390-6506-4bad-a890-180dcc56aa96"
+      "Produkt: ErgoChair 3000"
     ]
   },
   {
@@ -83,9 +83,9 @@
     "expected_routing": "requires_human_approval",
     "deliberate_abstention": false,
     "acceptable_sources": [
-      "c75917b8-fe42-4e2b-8f11-10656db2472b",
-      "97f52881-4b83-404b-aae1-d3f6c8968049",
-      "4e6f828c-0f6b-43ff-a8a8-19ac24ef479a"
+      "Rückgabe- und Beschwerdepolitik",
+      "Produkt: DeskPro Monitorarm",
+      "Eskalationsrichtlinie"
     ]
   },
   {
@@ -96,7 +96,7 @@
     "expected_routing": "ready_for_review",
     "deliberate_abstention": false,
     "acceptable_sources": [
-      "73e20825-31eb-4eef-9fca-0404a02e4c68"
+      "Bestellstatus-Erklärung"
     ]
   },
   {
@@ -107,8 +107,8 @@
     "expected_routing": "requires_human_approval",
     "deliberate_abstention": false,
     "acceptable_sources": [
-      "8ed092e8-b9ec-4129-a4bb-accc36d86c8e",
-      "97f52881-4b83-404b-aae1-d3f6c8968049"
+      "Angebotsanfrage-Prozess",
+      "Produkt: DeskPro Monitorarm"
     ]
   },
   {
@@ -119,8 +119,8 @@
     "expected_routing": "ready_for_review",
     "deliberate_abstention": false,
     "acceptable_sources": [
-      "c75917b8-fe42-4e2b-8f11-10656db2472b",
-      "0c347390-6506-4bad-a890-180dcc56aa96"
+      "Rückgabe- und Beschwerdepolitik",
+      "Produkt: ErgoChair 3000"
     ]
   },
   {
@@ -131,8 +131,8 @@
     "expected_routing": "requires_human_approval",
     "deliberate_abstention": false,
     "acceptable_sources": [
-      "c75917b8-fe42-4e2b-8f11-10656db2472b",
-      "4e6f828c-0f6b-43ff-a8a8-19ac24ef479a"
+      "Rückgabe- und Beschwerdepolitik",
+      "Eskalationsrichtlinie"
     ]
   }
 ]
