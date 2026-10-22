@@ -31,13 +31,14 @@ def _tokens(t: str) -> list[str]:
     return [w for w in re.findall(r"\w+", _normalize(t)) if w not in _STOPWORDS]
 
 
+# Compared after _normalize(); umlauts are ae/oe/ue/ss forms.
 _COMPLAINT_TERMS = (
     "zurueck",
     "rueckgabe",
     "beschwerde",
     "reklamation",
     "defekt",
-    "beschadigt",
+    "beschaedigt",
     "ersatz",
     "erstattung",
     "garantie",
@@ -52,7 +53,8 @@ def _complaint_boost(query: str, source: KnowledgeSource) -> float:
     if source.category not in ("policy", "escalation"):
         return 0.0
     q = _normalize(query)
-    if any(term in q for term in _COMPLAINT_TERMS):
+    terms = [_normalize(term) for term in _COMPLAINT_TERMS]
+    if any(term in q for term in terms):
         return 0.25
     return 0.0
 
@@ -76,8 +78,19 @@ async def kb_search(query: str, top_k: int = 3) -> dict:
             sc = _score(query, src.title + " " + src.content) + _complaint_boost(query, src)
             scored.append((sc, src))
         scored.sort(key=lambda x: x[0], reverse=True)
+        # Selection correction: for complaint-like queries, keep one policy or
+        # escalation source visible even when product sources score higher. This
+        # reserves a result slot; it does not inflate any score.
+        selected = scored[:top_k]
+        q_norm = _normalize(query)
+        complaint_terms = [_normalize(term) for term in _COMPLAINT_TERMS]
+        if any(term in q_norm for term in complaint_terms):
+            policy_candidates = [item for item in scored if item[1].category in ("policy", "escalation")]
+            if policy_candidates and not any(src.category in ("policy", "escalation") for _, src in selected):
+                best_policy = max(policy_candidates, key=lambda item: item[0])
+                selected = sorted(selected[:-1] + [best_policy], key=lambda item: item[0], reverse=True)
         results = []
-        for sc, src in scored[:top_k]:
+        for sc, src in selected:
             if sc <= 0:
                 continue
             results.append(

@@ -67,3 +67,12 @@ def test_unrelated_query_no_fabricated_relevance():
         assert res["results"] == []
     finally:
         _cleanup()
+
+def test_case_09_damaged_invoice_retrieves_policy():
+    _seed()
+    try:
+        res = asyncio.run(kb_search("Der gelieferte ErgoChair 3000 ist beschädigt und die Rechnung ist falsch."))
+        titles = [r["title"] for r in res["results"]]
+        assert "Rückgabe- und Beschwerdepolitik" in titles
+    finally:
+        _cleanup()
