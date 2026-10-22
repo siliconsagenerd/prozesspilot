@@ -1,0 +1,12 @@
+.venv/
+__pycache__/
+*.pyc
+data/*.db
+data/mock_emails/
+.env
+node_modules/
+frontend/dist/
+.DS_Store
+*.egg-info/
+.pytest_cache/
+.ruff_cache/
