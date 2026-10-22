@@ -1,39 +1,122 @@
 export const API = {
   base: "/api",
+
   async listInquiries() {
-    const r = await fetch(`${this.base}/inquiries`);
-    return r.json();
+    return requestJson<any[]>(`${this.base}/inquiries`);
   },
+
   async createInquiry(body: string, subject = "", customer_email: string | null = null) {
-    const r = await fetch(`${this.base}/inquiries`, {
+    return requestJson<any>(`${this.base}/inquiries`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ subject, body, customer_email }),
     });
-    return r.json();
   },
+
   async run(inquiryId: string, promptVariant = "improved") {
-    const r = await fetch(`${this.base}/inquiries/${inquiryId}/run?prompt_variant=${promptVariant}`, { method: "POST" });
-    return r.json();
+    return requestJson<any>(`${this.base}/inquiries/${inquiryId}/run?prompt_variant=${promptVariant}`, {
+      method: "POST",
+    });
   },
+
   async getRun(id: string) {
-    const r = await fetch(`${this.base}/runs/${id}`);
-    return r.json();
+    return requestJson<any>(`${this.base}/runs/${id}`);
   },
+
   async approve(runId: string, action: string, edited_text?: string, reason?: string) {
-    const r = await fetch(`${this.base}/runs/${runId}/approve`, {
+    return requestJson<any>(`${this.base}/runs/${runId}/approve`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ action, edited_text, reason }),
     });
-    return r.json();
   },
+
   async evalRun(promptVariant = "improved") {
-    const r = await fetch(`${this.base}/eval/run?prompt_variant=${promptVariant}`, { method: "POST" });
-    return r.json();
+    return requestJson<any>(`${this.base}/eval/run?prompt_variant=${promptVariant}`, {
+      method: "POST",
+    });
   },
+
   async evalResults() {
-    const r = await fetch(`${this.base}/eval/results`);
-    return r.json();
+    return requestJson<any>(`${this.base}/eval/results`);
   },
 };
+
+class ApiError extends Error {
+  status: number;
+
+  constructor(message: string, status: number) {
+    super(message);
+    this.name = "ApiError";
+    this.status = status;
+  }
+}
+
+async function requestJson<T>(url: string, init?: RequestInit): Promise<T> {
+  let response: Response;
+  try {
+    response = await fetch(url, init);
+  } catch {
+    throw new ApiError("Netzwerkfehler beim Aufruf der API.", 0);
+  }
+
+  const contentType = response.headers.get("content-type") ?? "";
+  const text = await response.text();
+
+  if (!response.ok) {
+    const detail = extractSafeDetail(text, contentType);
+    const suffix = detail ? `: ${detail}` : "";
+    throw new ApiError(`Anfrage fehlgeschlagen (HTTP ${response.status})${suffix}`, response.status);
+  }
+
+  if (text.trim() === "") {
+    throw new ApiError(`Leere Serverantwort (HTTP ${response.status}).`, response.status);
+  }
+
+  if (!contentType.toLowerCase().includes("application/json")) {
+    throw new ApiError(`Unerwartete Serverantwort (HTTP ${response.status}).`, response.status);
+  }
+
+  try {
+    return JSON.parse(text) as T;
+  } catch {
+    throw new ApiError(`Ungültige JSON-Antwort (HTTP ${response.status}).`, response.status);
+  }
+}
+
+function extractSafeDetail(text: string, contentType: string): string {
+  if (!contentType.toLowerCase().includes("application/json") || text.trim() === "") {
+    const plain = text.replace(/\s+/g, " ").trim();
+    return plain.length > 160 ? `${plain.slice(0, 160)}…` : plain;
+  }
+
+  try {
+    const data = JSON.parse(text);
+    const detail = (data as { detail?: unknown })?.detail;
+    if (typeof detail === "string") {
+      const clean = detail.replace(/[\r\n\t]+/g, " ").trim();
+      return clean.length > 160 ? `${clean.slice(0, 160)}…` : clean;
+    }
+    if (Array.isArray(detail)) {
+      const messages = detail
+        .map((item) => {
+          if (!item || typeof item !== "object") return "";
+          const location = Array.isArray((item as { loc?: unknown }).loc)
+            ? (item as { loc: unknown[] }).loc.join(".")
+            : "";
+          const message = typeof (item as { msg?: unknown }).msg === "string"
+            ? (item as { msg: string }).msg
+            : "";
+          return location && message ? `${location}: ${message}` : message;
+        })
+        .filter(Boolean)
+        .join("; ");
+      return messages.length > 160 ? `${messages.slice(0, 160)}…` : messages;
+    }
+  } catch {
+    // Fall through to the plain-text handling below.
+  }
+
+  const plain = text.replace(/\s+/g, " ").trim();
+  return plain.length > 160 ? `${plain.slice(0, 160)}…` : plain;
+}
