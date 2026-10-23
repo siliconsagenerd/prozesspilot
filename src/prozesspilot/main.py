@@ -173,6 +173,7 @@ def get_run(run_id: str):
             "state": r.state,
             "classification": r.classification,
             "confidence": r.confidence,
+            "classification_confidence": r.confidence,
             "routing_decision": r.routing_decision,
             "requires_approval": r.requires_approval,
             "total_cost_usd": r.total_cost_usd,
@@ -214,6 +215,7 @@ def get_run(run_id: str):
                     "cited_sources": draft.cited_sources,
                     "citation_format_issues": draft.citation_format_issues,
                     "confidence": draft.confidence,
+                    "draft_confidence": draft.confidence,
                     "reasoning": draft.reasoning,
                 }
                 if draft

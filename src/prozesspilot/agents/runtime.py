@@ -80,6 +80,8 @@ async def run_workflow(
     customer_ctx = None
     classification = None
     confidence = None
+    classification_confidence = None
+    draft_confidence = None
     kb_results = []
     draft_text = ""
     reasoning = ""
@@ -105,7 +107,8 @@ async def run_workflow(
             max_tokens=classify_max_tokens if classify_max_tokens is not None else settings.max_tokens_per_call,
         )
         classification = cls_result["classification"]
-        confidence = float(cls_result["confidence"])
+        classification_confidence = float(cls_result["confidence"])
+        confidence = classification_confidence
         latency = int((time.time() - t0) * 1000)
         await record_step(
             0,
@@ -180,24 +183,36 @@ async def run_workflow(
     except Exception as e:  # noqa: BLE001
         await record_step(1, "customer_lookup", status="failed", error=str(e))
 
-    # Step 2: kb search
+    # Step 2: kb search (skipped for spam to avoid irrelevant product context)
     t0 = time.time()
-    try:
-        kb = await registry.call("kb_search", query=inq_body or "")
-        kb_results = kb.get("results", [])
-        latency = int((time.time() - t0) * 1000)
+    if classification == "spam":
+        kb_results = []
         await record_step(
             2,
             "kb_search",
-            status="done",
+            status="skipped",
             input_summary=(inq_body or "")[:200],
-            output_summary=f"{len(kb_results)} sources",
-            tool_calls=[{"tool": "kb_search", "input": {"query": (inq_body or "")[:200]}, "output": kb}],
-            citations=[{"id": r["id"], "source_key": r.get("source_key"), "title": r["title"]} for r in kb_results],
-            latency_ms=latency,
+            output_summary="kb_search skipped: spam classification",
+            citations=[],
+            latency_ms=0,
         )
-    except Exception as e:  # noqa: BLE001
-        await record_step(2, "kb_search", status="failed", error=str(e))
+    else:
+        try:
+            kb = await registry.call("kb_search", query=inq_body or "")
+            kb_results = kb.get("results", [])
+            latency = int((time.time() - t0) * 1000)
+            await record_step(
+                2,
+                "kb_search",
+                status="done",
+                input_summary=(inq_body or "")[:200],
+                output_summary=f"{len(kb_results)} sources",
+                tool_calls=[{"tool": "kb_search", "input": {"query": (inq_body or "")[:200]}, "output": kb}],
+                citations=[{"id": r["id"], "source_key": r.get("source_key"), "title": r["title"]} for r in kb_results],
+                latency_ms=latency,
+            )
+        except Exception as e:  # noqa: BLE001
+            await record_step(2, "kb_search", status="failed", error=str(e))
 
     # Budget guard
     too_many_tokens = (
@@ -220,9 +235,11 @@ async def run_workflow(
         )
         draft_text = draft_res["text"]
         reasoning = draft_res.get("reasoning", "")
-        d_conf = draft_res.get("confidence", confidence)
-        if d_conf is not None:
-            confidence = float(d_conf)
+        draft_confidence = draft_res.get("confidence", None)
+        if draft_confidence is not None:
+            draft_confidence = float(draft_confidence)
+        else:
+            draft_confidence = confidence
         latency = int((time.time() - t0) * 1000)
         await record_step(
             3,
@@ -234,7 +251,7 @@ async def run_workflow(
             input_summary=f"classification={classification}",
             output_summary=draft_text[:400],
             citations=[{"id": r["id"], "source_key": r.get("source_key"), "title": r["title"]} for r in kb_results],
-            confidence=confidence,
+            confidence=draft_confidence,
             latency_ms=latency,
             tokens_in=draft_res.get("tokens_in", 0),
             tokens_out=draft_res.get("tokens_out", 0),
@@ -262,7 +279,7 @@ async def run_workflow(
                 citations=kb_citation_sources,
                 cited_sources=cited_sources,
                 citation_format_issues=citation_issues,
-                confidence=confidence,
+                confidence=draft_confidence,
                 reasoning=reasoning,
             )
         )

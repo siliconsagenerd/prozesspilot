@@ -122,6 +122,7 @@ def extract_run_record(run_id: str) -> dict[str, Any]:
             "cited_sources": cited_sources,
             "citation_format_issues": citation_format_issues,
             "confidence": draft.confidence if draft is not None else None,
+            "draft_confidence": draft.confidence if draft is not None else None,
             "reasoning": draft.reasoning if draft is not None else None,
             "edited_text": draft.edited_text if draft is not None else None,
         }
@@ -131,6 +132,7 @@ def extract_run_record(run_id: str) -> dict[str, Any]:
             "state": run.state,
             "classification": run.classification,
             "confidence": run.confidence,
+            "classification_confidence": run.confidence,
             "routing_decision": run.routing_decision,
             "requires_approval": run.requires_approval,
             "total_cost_usd": run.total_cost_usd,

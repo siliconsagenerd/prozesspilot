@@ -72,7 +72,7 @@ class WorkflowRun(Base):
     process_name: Mapped[str] = mapped_column(String(120), default="inquiry_handling")
     state: Mapped[str] = mapped_column(String(40), default="New")
     classification: Mapped[str | None] = mapped_column(String(60), nullable=True)
-    confidence: Mapped[float | None] = mapped_column(Float, nullable=True)
+    confidence: Mapped[float | None] = mapped_column(Float, nullable=True)  # classification confidence used for routing
     routing_decision: Mapped[str | None] = mapped_column(String(60), nullable=True)
     requires_approval: Mapped[bool] = mapped_column(Boolean, default=False)
     total_cost_usd: Mapped[float] = mapped_column(Float, default=0.0)
@@ -121,7 +121,8 @@ class Draft(Base):
     citations: Mapped[list | None] = mapped_column(JSON, nullable=True)
     cited_sources: Mapped[list | None] = mapped_column(JSON, nullable=True)
     citation_format_issues: Mapped[list | None] = mapped_column(JSON, nullable=True)
-    confidence: Mapped[float | None] = mapped_column(Float, nullable=True)
+    confidence: Mapped[float | None] = mapped_column(Float, nullable=True)  # post-draft confidence
+
     reasoning: Mapped[str] = mapped_column(Text, default="")
     created_at: Mapped[dt.datetime] = mapped_column(DateTime(timezone=True), default=now)
 

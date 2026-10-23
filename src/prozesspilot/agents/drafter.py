@@ -12,7 +12,9 @@ BASELINE_SYSTEM = (
     "Complaint rules: distinguish a 30-day unused-item return from defect remedies (replacement/repair); "
     "do not promise invoice corrections unless a source supports them; "
     "do not infer that a product was used merely because a defect is reported; "
-    "use clean explicit [Title] citation markers; preserve escalation for complaints."
+    "use clean explicit [Title] citation markers; preserve escalation for complaints. "
+    "Order-status rules: cite the retrieved policy source for delivery times and status definitions; "
+    "do not state tracking, stock, or order-lookup details unless a source supports them."
 )
 
 IMPROVED_SYSTEM = (
@@ -25,6 +27,8 @@ IMPROVED_SYSTEM = (
     "do not promise invoice corrections unless a source supports them; "
     "do not infer that a product was used merely because a defect is reported; "
     "keep citation markers clean and explicit as [Title]; preserve escalation for complaints. "
+    "Order-status rules: cite the retrieved policy source for delivery times and status definitions; "
+    "do not state tracking, stock, or order-lookup details unless a source supports them. "
     "Return ONLY valid JSON: {\"text\": str, \"confidence\": number 0-1, \"reasoning\": str}."
 )
 

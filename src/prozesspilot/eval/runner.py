@@ -124,6 +124,9 @@ async def run_eval(
                 d.citation_format_issues = issues
             explicit_citations = list(d.cited_sources) if d is not None and d.cited_sources else []
             citations_present = bool(explicit_citations)
+            draft_step = next((st for st in steps_for_retrieval if getattr(st, "name", None) == "draft"), None)
+            completion_status = getattr(draft_step, "completion_status", None) if draft_step is not None else None
+            execution_complete = r.state in ("ReadyForReview", "AwaitingApproval")
             citation_keys = [
                 c.get("source_key") or c.get("title")
                 for c in explicit_citations
@@ -132,6 +135,19 @@ async def run_eval(
 
             deliberate_abstention = case["deliberate_abstention"]
             abstention_correct = evaluate_abstention(deliberate_abstention, citations_present)
+            classification_confidence = float(r.confidence) if r.confidence is not None else 0.0
+            from prozesspilot.db.models import Customer as _Customer
+            inq_obj = s.get(Inquiry, r.inquiry_id)
+            cust_obj = s.get(_Customer, inq_obj.customer_id) if (inq_obj and inq_obj.customer_id) else None
+            customer_ctx = None
+            if cust_obj is not None:
+                customer_ctx = {
+                    "tier": cust_obj.tier,
+                    "has_open_complaint": bool(getattr(cust_obj, "has_open_complaint", False)),
+                }
+            from prozesspilot.agents.runtime import _route as _route_policy
+            policy_routing = _route_policy(predicted, classification_confidence, customer_ctx)
+            routing_policy_compliant = (routing == policy_routing["decision"])
 
             acceptable_sources = case["acceptable_sources"]
             sources_correct = evaluate_source_ids(acceptable_sources, citation_keys)
@@ -181,6 +197,24 @@ async def run_eval(
                     "routing": routing,
                     "expected_routing": expected_routing,
                     "routing_correct": routing == expected_routing,
+                    "routing_policy_compliant": routing_policy_compliant,
+                    "routing_matches_expected": routing == expected_routing,
+                    "routing_matches_frozen_expected": routing == expected_routing,
+                    "execution_complete": execution_complete,
+                    "completion_status": completion_status,
+                    "classification_confidence": classification_confidence,
+                    "draft_confidence": float(d.confidence) if d is not None and d.confidence is not None else None,
+                    "citation_format_issues": (
+                        list(d.citation_format_issues) if d is not None and d.citation_format_issues else []
+                    ),
+                    "content_quality_findings": (
+                        (["missing_citation"] if (not citations_present and not deliberate_abstention) else [])
+                        + (["citation_format_issue"] if (d is not None and d.citation_format_issues) else [])
+                    ),
+                    "defects": (
+                        (["missing_citation"] if (not citations_present and not deliberate_abstention) else [])
+                        + (["citation_format_issue"] if (d is not None and d.citation_format_issues) else [])
+                    ),
                     "citations_present": citations_present,
                     "deliberate_abstention": deliberate_abstention,
                     "abstention_correct": abstention_correct,
@@ -203,6 +237,8 @@ async def run_eval(
     n = len(results)
     cls_acc = sum(1 for r in results if r["classification_correct"]) / n if n else 0
     route_acc = sum(1 for r in results if r["routing_correct"]) / n if n else 0
+    policy_acc = sum(1 for r in results if r.get("routing_policy_compliant")) / n if n else 0
+    exec_acc = sum(1 for r in results if r.get("execution_complete")) / n if n else 0
     cit_rate = sum(1 for r in results if r["citations_present"]) / n if n else 0
 
     abst_cases = [r for r in results if r.get("deliberate_abstention") is not None]
@@ -217,6 +253,8 @@ async def run_eval(
         "provider": settings.provider,
         "classification_accuracy": round(cls_acc, 3),
         "routing_accuracy": round(route_acc, 3),
+        "routing_policy_compliance": round(policy_acc, 3),
+        "execution_completion_rate": round(exec_acc, 3),
         "citation_rate": round(cit_rate, 3),
         "abstention_accuracy": round(abst_acc, 3),
         "source_accuracy": (round(src_acc, 3) if src_acc is not None else None),
