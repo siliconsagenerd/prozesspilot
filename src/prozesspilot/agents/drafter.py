@@ -8,7 +8,11 @@ from prozesspilot.providers.factory import complete_with_fallback
 
 BASELINE_SYSTEM = (
     "You draft a German customer-service reply. Use provided sources. "
-    "Return JSON: {text, confidence, reasoning}. Cite source titles in text."
+    "Return JSON: {text, confidence, reasoning}. Cite source titles in text. "
+    "Complaint rules: distinguish a 30-day unused-item return from defect remedies (replacement/repair); "
+    "do not promise invoice corrections unless a source supports them; "
+    "do not infer that a product was used merely because a defect is reported; "
+    "use clean explicit [Title] citation markers; preserve escalation for complaints."
 )
 
 IMPROVED_SYSTEM = (
@@ -17,6 +21,10 @@ IMPROVED_SYSTEM = (
     "Use ONLY the provided knowledge-base snippets; cite them by title in brackets like [Title]. "
     "If no source supports a claim, say you cannot confirm and offer escalation. "
     "Consider customer tier/history if provided. "
+    "Complaint rules: distinguish a 30-day unused-item return from defect remedies (replacement/repair); "
+    "do not promise invoice corrections unless a source supports them; "
+    "do not infer that a product was used merely because a defect is reported; "
+    "keep citation markers clean and explicit as [Title]; preserve escalation for complaints. "
     "Return ONLY valid JSON: {\"text\": str, \"confidence\": number 0-1, \"reasoning\": str}."
 )
 
