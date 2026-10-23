@@ -111,12 +111,22 @@ async def run_eval(
                 else "ready_for_review"
             )
 
-            from prozesspilot.db.models import Draft
+            from prozesspilot.db.models import Draft, WorkflowStep
+            from prozesspilot.eval.citations import extract_explicit_citations
+            from prozesspilot.eval.export import _retrieved_sources
             d = s.execute(select(Draft).where(Draft.run_id == run_id)).scalar_one_or_none()
-            citations_present = bool(d and d.citations)
+            steps_for_retrieval = s.execute(select(WorkflowStep).where(WorkflowStep.run_id == run_id)).scalars().all()
+            retrieved_sources = _retrieved_sources(list(steps_for_retrieval))
+            # Backfill explicit citations for older rows if needed.
+            if d is not None and not d.cited_sources and d.original_text:
+                cited, issues = extract_explicit_citations(d.original_text, retrieved_sources)
+                d.cited_sources = cited
+                d.citation_format_issues = issues
+            explicit_citations = list(d.cited_sources) if d is not None and d.cited_sources else []
+            citations_present = bool(explicit_citations)
             citation_keys = [
                 c.get("source_key") or c.get("title")
-                for c in (d.citations if d and d.citations else [])
+                for c in explicit_citations
                 if isinstance(c, dict)
             ]
 

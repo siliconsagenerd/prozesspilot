@@ -211,6 +211,8 @@ def get_run(run_id: str):
                     "original_text": draft.original_text,
                     "edited_text": draft.edited_text,
                     "citations": draft.citations,
+                    "cited_sources": draft.cited_sources,
+                    "citation_format_issues": draft.citation_format_issues,
                     "confidence": draft.confidence,
                     "reasoning": draft.reasoning,
                 }

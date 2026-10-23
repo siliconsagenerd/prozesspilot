@@ -9,7 +9,7 @@ from sqlalchemy import select
 
 from prozesspilot.db.models import Draft, WorkflowRun, WorkflowStep
 from prozesspilot.db.session import db_session
-
+from prozesspilot.eval.citations import extract_explicit_citations
 
 FULL_DRAFT_UNAVAILABLE_LABEL = "preview only; full-draft review unavailable"
 
@@ -75,15 +75,42 @@ def extract_run_record(run_id: str) -> dict[str, Any]:
         )
         step_dicts = [_step_dict(step) for step in steps]
         retrieved_sources = _retrieved_sources(steps)
+        retrieved_by_key = {}
+        for item in retrieved_sources:
+            if isinstance(item, dict):
+                for key in ("source_key", "title", "id"):
+                    value = item.get(key)
+                    if value:
+                        retrieved_by_key[str(value)] = item
         draft_step = _draft_step(steps)
         preview = draft_step.output_summary if draft_step is not None else None
         full_text = draft.original_text if draft is not None and draft.original_text else None
         full_available = full_text is not None
-        cited_sources = (
-            list(draft.citations)
-            if draft is not None and draft.citations
-            else (list(draft_step.citations) if draft_step is not None and draft_step.citations else [])
-        )
+        if draft is not None and draft.cited_sources:
+            raw_cited = list(draft.cited_sources)
+        elif draft is not None and full_text:
+            raw_cited, _ = extract_explicit_citations(full_text, retrieved_sources)
+        elif draft_step is not None and draft_step.citations:
+            raw_cited = list(draft_step.citations)
+        else:
+            raw_cited = []
+        if draft is not None and draft.citation_format_issues is not None:
+            citation_format_issues = list(draft.citation_format_issues)
+        else:
+            _, citation_format_issues = extract_explicit_citations(full_text, retrieved_sources)
+        cited_sources = []
+        seen = set()
+        for item in raw_cited:
+            if not isinstance(item, dict):
+                continue
+            key = item.get("source_key") or item.get("title") or item.get("id")
+            resolved = retrieved_by_key.get(str(key)) if key is not None else None
+            source = dict(resolved) if resolved is not None else dict(item)
+            identity = source.get("source_key") or source.get("title") or source.get("id")
+            if identity in seen:
+                continue
+            seen.add(identity)
+            cited_sources.append(source)
         draft_record = {
             "id": draft.id if draft is not None else None,
             "full_text": full_text,
@@ -92,6 +119,8 @@ def extract_run_record(run_id: str) -> dict[str, Any]:
             "full_available": full_available,
             "review_status": "full" if full_available else FULL_DRAFT_UNAVAILABLE_LABEL,
             "citations": cited_sources,
+            "cited_sources": cited_sources,
+            "citation_format_issues": citation_format_issues,
             "confidence": draft.confidence if draft is not None else None,
             "reasoning": draft.reasoning if draft is not None else None,
             "edited_text": draft.edited_text if draft is not None else None,
@@ -116,6 +145,7 @@ def extract_run_record(run_id: str) -> dict[str, Any]:
         "draft": draft_record,
         "retrieved_sources": retrieved_sources,
         "cited_sources": cited_sources,
+        "citation_format_issues": citation_format_issues,
     }
 
 
@@ -145,6 +175,9 @@ def render_review_packet(records: list[dict[str, Any]], title: str = "Human Revi
         lines.extend(["", "### Cited sources"])
         for source in record["cited_sources"]:
             lines.append(f"- {source.get('source_key') or source.get('title') or source.get('id')}")
+        lines.extend(["", "### Citation format issues"])
+        for issue in record.get("citation_format_issues", []):
+            lines.append(f"- {issue}")
         lines.extend(["", "### Full draft", "", draft["review_text"] or "_unavailable_", ""])
         lines.extend(
             [

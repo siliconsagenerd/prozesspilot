@@ -18,6 +18,7 @@ from prozesspilot.db.models import (
     WorkflowStep,
 )
 from prozesspilot.db.session import db_session
+from prozesspilot.eval.citations import extract_explicit_citations
 from prozesspilot.observability.audit import audit
 from prozesspilot.tools.crm_mock import crm_update_mock
 from prozesspilot.tools.customer_lookup import customer_lookup
@@ -251,12 +252,16 @@ async def run_workflow(
         return run_id
 
     # Persist draft
+    kb_citation_sources = [{"id": r["id"], "source_key": r.get("source_key"), "title": r["title"]} for r in kb_results]
+    cited_sources, citation_issues = extract_explicit_citations(draft_text, kb_citation_sources)
     with db_session() as s:
         s.add(
             Draft(
                 run_id=run_id,
                 original_text=draft_text,
-                citations=[{"id": r["id"], "source_key": r.get("source_key"), "title": r["title"]} for r in kb_results],
+                citations=kb_citation_sources,
+                cited_sources=cited_sources,
+                citation_format_issues=citation_issues,
                 confidence=confidence,
                 reasoning=reasoning,
             )

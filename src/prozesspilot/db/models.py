@@ -119,6 +119,8 @@ class Draft(Base):
     original_text: Mapped[str] = mapped_column(Text)
     edited_text: Mapped[str | None] = mapped_column(Text, nullable=True)
     citations: Mapped[list | None] = mapped_column(JSON, nullable=True)
+    cited_sources: Mapped[list | None] = mapped_column(JSON, nullable=True)
+    citation_format_issues: Mapped[list | None] = mapped_column(JSON, nullable=True)
     confidence: Mapped[float | None] = mapped_column(Float, nullable=True)
     reasoning: Mapped[str] = mapped_column(Text, default="")
     created_at: Mapped[dt.datetime] = mapped_column(DateTime(timezone=True), default=now)
