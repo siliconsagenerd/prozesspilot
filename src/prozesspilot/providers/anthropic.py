@@ -55,4 +55,6 @@ class AnthropicProvider:
             tokens_out=tout,
             cost_usd=estimate_cost(self.name, self.model, tin, tout),
             latency_ms=latency,
+            finish_reason=data.get("stop_reason"),
+            response_model=data.get("model", self.model),
         )

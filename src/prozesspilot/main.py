@@ -198,6 +198,10 @@ def get_run(run_id: str):
                     "tokens_in": st.tokens_in,
                     "tokens_out": st.tokens_out,
                     "cost_usd": st.cost_usd,
+                    "finish_reason": st.finish_reason,
+                    "response_model": st.response_model,
+                    "requested_max_tokens": st.requested_max_tokens,
+                    "completion_status": st.completion_status,
                     "error": st.error,
                 }
                 for st in steps

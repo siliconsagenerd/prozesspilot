@@ -40,6 +40,22 @@ _register_tools()
 CLASSIFICATIONS = ["product_question", "complaint", "order_status", "quote_request", "spam", "unclear"]
 
 
+def _completion_status(finish_reason, text):
+    """Classify output completeness from provider evidence and a light heuristic."""
+    if finish_reason in {"length", "max_tokens", "MAX_TOKENS", "model_length"}:
+        return "length_stopped"
+    if finish_reason in {"stop", "end_turn", "stop_sequence", "completed", "DONE"}:
+        return "complete"
+    stripped = (text or "").rstrip()
+    if not stripped:
+        return "unknown"
+    ends_badly = stripped.endswith((",", ":", ";", "(", "[", "{"))
+    lower_tail = stripped[-1].islower() and not stripped.endswith(("kb]", "]"))
+    if ends_badly or lower_tail:
+        return "heuristic_incomplete"
+    return "unknown" if finish_reason is None else "provider_reported"
+
+
 async def run_workflow(
     inquiry_id: str,
     prompt_variant: str = "improved",
@@ -104,9 +120,15 @@ async def run_workflow(
             tokens_in=cls_result.get("tokens_in", 0),
             tokens_out=cls_result.get("tokens_out", 0),
             cost_usd=cls_result.get("cost_usd", 0.0),
+            finish_reason=cls_result.get("finish_reason"),
+            response_model=cls_result.get("response_model"),
+            requested_max_tokens=(
+                classify_max_tokens if classify_max_tokens is not None else settings.max_tokens_per_call
+            ),
+            completion_status=_completion_status(cls_result.get("finish_reason"), cls_result.get("text", "")),
         )
     except Exception as e:  # noqa: BLE001
-        await record_step(0, "classify", status="failed", error=str(e))
+        await record_step(0, "classify", status="failed", error=str(e), completion_status="unknown")
         _fail_run(run_id, str(e))
         return run_id
 
@@ -216,9 +238,15 @@ async def run_workflow(
             tokens_in=draft_res.get("tokens_in", 0),
             tokens_out=draft_res.get("tokens_out", 0),
             cost_usd=draft_res.get("cost_usd", 0.0),
+            finish_reason=draft_res.get("finish_reason"),
+            response_model=draft_res.get("response_model"),
+            requested_max_tokens=(
+                draft_max_tokens if draft_max_tokens is not None else settings.max_tokens_per_call
+            ),
+            completion_status=_completion_status(draft_res.get("finish_reason"), draft_text),
         )
     except Exception as e:  # noqa: BLE001
-        await record_step(3, "draft", status="failed", error=str(e))
+        await record_step(3, "draft", status="failed", error=str(e), completion_status="unknown")
         _fail_run(run_id, str(e))
         return run_id
 

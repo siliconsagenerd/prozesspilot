@@ -15,6 +15,8 @@ class LLMResult:
     tokens_out: int = 0
     cost_usd: float = 0.0
     latency_ms: int = 0
+    finish_reason: str | None = None
+    response_model: str | None = None
 
 
 class Provider(Protocol):

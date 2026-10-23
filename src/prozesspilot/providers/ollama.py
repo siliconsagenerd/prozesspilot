@@ -49,4 +49,6 @@ class OllamaProvider:
             tokens_out=tout,
             cost_usd=estimate_cost(self.name, self.model, tin, tout),
             latency_ms=latency,
+            finish_reason=data.get("done_reason") or ("stop" if data.get("done") else None),
+            response_model=data.get("model", self.model),
         )

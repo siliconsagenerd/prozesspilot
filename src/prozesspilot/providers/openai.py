@@ -42,7 +42,9 @@ class OpenAIProvider:
             r.raise_for_status()
             data = r.json()
         latency = int((time.time() - t0) * 1000)
-        text = data["choices"][0]["message"]["content"]
+        choice = data["choices"][0]
+        message = choice.get("message", {})
+        text = message.get("content") or ""
         usage = data.get("usage", {})
         tin = usage.get("prompt_tokens", 0)
         tout = usage.get("completion_tokens", 0)
@@ -54,4 +56,6 @@ class OpenAIProvider:
             tokens_out=tout,
             cost_usd=estimate_cost(self.name, self.model, tin, tout),
             latency_ms=latency,
+            finish_reason=choice.get("finish_reason"),
+            response_model=data.get("model", self.model),
         )

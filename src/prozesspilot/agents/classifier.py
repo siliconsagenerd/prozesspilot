@@ -46,4 +46,6 @@ async def classify_inquiry(text: str, prompt_variant: str = "improved", max_toke
         "tokens_in": res.tokens_in,
         "tokens_out": res.tokens_out,
         "cost_usd": res.cost_usd,
+        "finish_reason": res.finish_reason,
+        "response_model": res.response_model,
     }

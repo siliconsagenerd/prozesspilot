@@ -61,4 +61,6 @@ async def draft_response(
         "tokens_in": res.tokens_in,
         "tokens_out": res.tokens_out,
         "cost_usd": res.cost_usd,
+        "finish_reason": res.finish_reason,
+        "response_model": res.response_model,
     }
