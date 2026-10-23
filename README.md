@@ -7,12 +7,47 @@
 [![Vue](https://img.shields.io/badge/Vue-3-4FC08D?logo=vue.js)](https://vuejs.org/)
 [![Tests](https://img.shields.io/badge/tests-pytest%20%2B%20ruff-2ea44f)](https://github.com/siliconsagenerd/prozesspilot/actions)
 
+[Deutsch](#deutsch) | [English](#english)
+
 Local-first AI workflow copilot for handling **synthetic German customer inquiries**. Demonstrates
 structured multi-step AI workflow, tool use, retrieval with citations, confidence-based human
 approval, full observability/audit trail, and evaluation.
 
 > Built as a portfolio project for EUROKEY Software GmbH (Saarbrücken) — Werkstudent
 > "Künstliche Intelligenz & LLM". All data is synthetic; no real email/CRM writes occur.
+
+## Deutsch
+
+ProzessPilot ist ein lokaler KI-Workflow-Copilot für **synthetische deutsche Kundenanfragen**.
+Er demonstriert strukturierte mehrstufige KI-Workflows, Werkzeugnutzung, Retrieval mit
+Zitaten, konfidenzbasierte Freigabe durch Menschen, vollständige Observability/Audit-Trails
+und Evaluation.
+
+> Portfolio-Projekt für EUROKEY Software GmbH (Saarbrücken). Alle Daten sind synthetisch;
+> es erfolgen keine echten E-Mail-/CRM-Schreibvorgänge.
+
+### Schnellstart
+
+```bash
+cd ~/projects/prozesspilot
+python -m pip install -e ".[dev]"
+cp .env.example .env
+PYTHONPATH=src alembic upgrade head
+PYTHONPATH=src python -m prozesspilot.cli seed
+PYTHONPATH=src python -m prozesspilot.cli serve
+cd frontend && npm install && npm run dev
+```
+
+### Bekannte Einschränkungen
+
+- Retrieval ist keyword/TF-IDF, nicht embeddings-basiert.
+- Evaluation umfasst 12 synthetische Fälle; keine statistische Signifikanz.
+- Keine echte Authentifizierung oder Multi-Tenancy (außerhalb des v1-Umfangs).
+- Deutsche Antwortqualität hängt vom Modell ab.
+
+---
+
+## English
 
 ## What this project covers
 
@@ -165,6 +200,11 @@ npm run build
 - Provider/model identity is provider-reported only.
 - Historical expected-routing conflicts remain unresolved.
 - No full 12-case rerun was performed against the final implementation.
+
+## Acknowledgements
+
+Built with FastAPI, SQLAlchemy, Alembic, Vue 3, Vite, pytest, and Ruff. Inspired by the
+SecureDoc AI README format.
 
 ## Documentation
 
