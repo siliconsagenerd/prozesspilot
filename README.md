@@ -1,5 +1,7 @@
 # ProzessPilot — Customer Inquiry Workflow Copilot
 
+[![GitHub](https://img.shields.io/badge/GitHub-siliconsagenerd%2Fprozesspilot-181717?logo=github)](https://github.com/siliconsagenerd/prozesspilot)
+
 Local-first AI workflow copilot for handling **synthetic German customer inquiries**.
 Demonstrates structured multi-step AI workflow, tool use, retrieval with citations,
 confidence-based human approval, full observability/audit trail, and evaluation.
@@ -102,7 +104,13 @@ would require a shared limiter (e.g. Redis). Not production-ready.
   No statistical significance claimed; LLM judge not used as objective truth.
 - Retrieval: keyword/TF-IDF over seeded knowledge sources; embeddings optional upgrade.
 
-## Local-only status
+## Repository
 
-No GitHub repository or deployment has been created yet. The authoritative local workspace is
-`~/projects/prozesspilot` on oldmac. This project is a local portfolio demo only.
+GitHub: https://github.com/siliconsagenerd/prozesspilot
+
+The authoritative local workspace remains `~/projects/prozesspilot` on oldmac. This project is a
+local portfolio demo only; no deployment or customer-message sending is performed.
+
+## Documentation
+
+- `docs/demo/demo-checklist.md` - local demo checklist and routing behavior notes.
