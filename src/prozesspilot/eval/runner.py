@@ -53,7 +53,13 @@ def evaluate_source_ids(
     return all(sid in found_set for sid in acceptable_source_ids)
 
 
-async def run_eval(prompt_variant: str = "improved", provider_override: str | None = None) -> dict:
+async def run_eval(
+    prompt_variant: str = "improved",
+    provider_override: str | None = None,
+    case_ids: list[str] | None = None,
+    classify_max_tokens: int | None = None,
+    draft_max_tokens: int | None = None,
+) -> dict:
     if provider_override:
         settings.provider = provider_override  # type: ignore
     preflight_evaluation(
@@ -63,12 +69,16 @@ async def run_eval(prompt_variant: str = "improved", provider_override: str | No
         {"max_tokens_per_call": settings.max_tokens_per_call},
     )
     results = []
-    for case in CASES:
+    selected_cases = CASES
+    if case_ids is not None:
+        wanted = set(case_ids)
+        selected_cases = [case for case in CASES if case["id"] in wanted]
+    for case in selected_cases:
         # Validate case contract strictly
         if "deliberate_abstention" not in case or not isinstance(case["deliberate_abstention"], bool):
             raise ValueError(f"case {case.get('id')} missing boolean deliberate_abstention")
-        if "acceptable_source_ids" not in case or not isinstance(case["acceptable_source_ids"], list):
-            raise ValueError(f"case {case.get('id')} missing list acceptable_source_ids")
+        if "acceptable_sources" not in case or not isinstance(case["acceptable_sources"], list):
+            raise ValueError(f"case {case.get('id')} missing list acceptable_sources")
 
         # create inquiry
         with db_session() as s:
@@ -83,7 +93,12 @@ async def run_eval(prompt_variant: str = "improved", provider_override: str | No
             s.flush()
             inq_id = inq.id
 
-        run_id = await run_workflow(inq_id, prompt_variant=prompt_variant)
+        run_id = await run_workflow(
+            inq_id,
+            prompt_variant=prompt_variant,
+            classify_max_tokens=classify_max_tokens,
+            draft_max_tokens=draft_max_tokens,
+        )
 
         # gather inside db_session to avoid detached instance attribute errors
         with db_session() as s:
@@ -110,6 +125,9 @@ async def run_eval(prompt_variant: str = "improved", provider_override: str | No
 
             acceptable_sources = case["acceptable_sources"]
             sources_correct = evaluate_source_ids(acceptable_sources, citation_keys)
+
+            from prozesspilot.eval.export import extract_run_record
+            record = extract_run_record(run_id)
 
             row = Evaluation(
                 case_id=case["id"],
@@ -161,6 +179,13 @@ async def run_eval(prompt_variant: str = "improved", provider_override: str | No
                     "sources_correct": sources_correct,
                     "latency_ms": r.total_latency_ms,
                     "cost_usd": r.total_cost_usd,
+                    "run_id": run_id,
+                    "draft_text": record["draft"]["full_text"],
+                    "draft_preview": record["draft"]["preview"],
+                    "draft_review_status": record["draft"]["review_status"],
+                    "retrieved_sources": record["retrieved_sources"],
+                    "cited_sources": record["cited_sources"],
+                    "steps": record["steps"],
                 }
             )
 
