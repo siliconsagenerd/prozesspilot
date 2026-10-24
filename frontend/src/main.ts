@@ -6,6 +6,7 @@ import RunView from "./views/RunView.vue";
 import EvalView from "./views/EvalView.vue";
 import LandingView from "./views/LandingView.vue";
 import DemoView from "./views/DemoView.vue";
+import NotFoundView from "./views/NotFoundView.vue";
 
 const router = createRouter({
   history: createWebHistory(),
@@ -15,6 +16,7 @@ const router = createRouter({
     { path: "/app", component: InboxView },
     { path: "/runs/:id", component: RunView },
     { path: "/eval", component: EvalView },
+    { path: "/:pathMatch(.*)*", component: NotFoundView },
   ],
 });
 

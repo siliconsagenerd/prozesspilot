@@ -71,6 +71,46 @@
         <span class="tech">FastAPI · Vue 3 · SQLite · OpenAI/Laya</span>
       </div>
     </footer>
+
+    <aside
+      class="float-widget"
+      :class="{ 'is-expanded': floatExpanded || floatHovered }"
+      aria-label="Companion project"
+      @click="toggleFloat"
+      @mouseenter="floatHovered = true"
+      @mouseleave="floatHovered = false"
+      tabindex="0"
+      @keydown.enter="toggleFloat"
+      @keydown.space.prevent="toggleFloat"
+    >
+      <div class="float-widget__monogram" aria-hidden="true">SD</div>
+      <div class="float-widget__body">
+        <div class="float-widget__eyebrow">★ {{ t("landing.prov.related") }}</div>
+        <h3 class="float-widget__title">SecureDoc-AI</h3>
+        <a
+          href="https://github.com/siliconsagenerd/securedoc-ai"
+          target="_blank"
+          rel="noopener"
+          class="float-widget__primary-link"
+          @click.stop
+        >Open SecureDoc-AI ↗</a>
+        <div class="float-widget__extra" v-show="floatExpanded || floatHovered">
+          <p class="float-widget__desc">{{ t("landing.portfolio.body") }}</p>
+          <div class="float-widget__chips">
+            <span class="chip">FastAPI</span>
+            <span class="chip">Vue 3</span>
+            <span class="chip">SQLAlchemy</span>
+            <span class="chip">RAG</span>
+            <span class="chip">Spring Boot</span>
+          </div>
+          <div class="float-widget__links">
+            <a href="https://github.com/siliconsagenerd/securedoc-ai" target="_blank" rel="noopener" class="float-widget__link" @click.stop>SecureDoc-AI ↗</a>
+            <a href="https://github.com/siliconsagenerd/prozesspilot" target="_blank" rel="noopener" class="float-widget__link" @click.stop>ProzessPilot ↗</a>
+          </div>
+        </div>
+        <div class="float-widget__hint" v-show="!(floatExpanded || floatHovered)">tap to expand</div>
+      </div>
+    </aside>
   </div>
 </template>
 
@@ -79,6 +119,9 @@ import { ref, onMounted } from "vue";
 import { t, locale, setLocale } from "./i18n";
 
 const theme = ref<"light" | "dark">("light");
+const floatExpanded = ref(false);
+const floatHovered = ref(false);
+const toggleFloat = () => { floatExpanded.value = !floatExpanded.value; };
 
 function applyTheme(tVal: string) {
   document.documentElement.setAttribute("data-theme", tVal);
@@ -367,6 +410,214 @@ body {
     padding: 0 1rem;
     flex-direction: column;
     align-items: flex-start;
+  }
+}
+::selection {
+  background: var(--text);
+  color: var(--bg);
+}
+
+html { scroll-behavior: smooth; }
+
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--font-sans);
+  color: var(--text);
+  letter-spacing: -0.02em;
+  line-height: 1.15;
+  font-weight: 700;
+  margin: 0;
+}
+
+h1 { font-size: clamp(2rem, 4vw, 3rem); letter-spacing: -0.03em; }
+h2 { font-size: clamp(1.5rem, 3vw, 2.25rem); letter-spacing: -0.025em; }
+h3 { font-size: clamp(1.15rem, 2vw, 1.5rem); letter-spacing: -0.02em; }
+h4 { font-size: 1.05rem; letter-spacing: -0.01em; font-weight: 600; }
+
+a {
+  color: inherit;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 0.18em;
+  transition: color var(--transition), text-decoration-color var(--transition);
+}
+
+a:focus-visible,
+button:focus-visible,
+[role="button"]:focus-visible {
+  outline: 2px solid var(--text);
+  outline-offset: 2px;
+}
+
+button { font-family: inherit; }
+
+::placeholder { color: var(--text-subtle); }
+
+.muted { color: var(--text-muted); }
+
+.float-widget {
+  position: fixed;
+  bottom: 1.25rem;
+  right: 1.25rem;
+  z-index: 40;
+  width: 300px;
+  max-width: calc(100vw - 2.5rem);
+  background: var(--text);
+  color: var(--bg);
+  border: none;
+  box-shadow: 0 12px 40px rgba(0,0,0,0.25);
+  padding: 1rem 1.15rem 1.1rem;
+  display: flex;
+  gap: 0.85rem;
+  align-items: flex-start;
+  animation: slideUp 0.5s ease-out both;
+  overflow: hidden;
+  cursor: pointer;
+  transition: transform var(--transition), box-shadow var(--transition);
+}
+
+.float-widget:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 16px 48px rgba(0,0,0,0.3);
+}
+
+.float-widget::before {
+  content: "";
+  position: absolute;
+  top: -30%;
+  right: -20%;
+  width: 140px;
+  height: 140px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(255,255,255,0.12) 0%, transparent 70%);
+  pointer-events: none;
+}
+
+.float-widget__monogram {
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  font-weight: 700;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--bg);
+  color: var(--text);
+  flex-shrink: 0;
+  letter-spacing: 0.02em;
+}
+
+.float-widget__body { min-width: 0; flex: 1; }
+
+.float-widget__eyebrow {
+  font-family: var(--font-mono);
+  font-size: 0.62rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--bg);
+  opacity: 0.7;
+  margin-bottom: 0.2rem;
+}
+
+.float-widget__title {
+  font-size: 1.05rem;
+  font-weight: 800;
+  letter-spacing: -0.01em;
+  color: var(--bg);
+  margin-bottom: 0.5rem;
+}
+
+.float-widget__desc {
+  font-size: 0.8rem;
+  line-height: 1.5;
+  color: var(--bg);
+  opacity: 0.85;
+  margin-bottom: 0.6rem;
+}
+
+.float-widget__chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.3rem;
+  margin-bottom: 0.6rem;
+}
+
+.float-widget__chips .chip {
+  font-size: 0.68rem;
+  padding: 0.1rem 0.4rem;
+  border: 1px solid rgba(255,255,255,0.3);
+  background: transparent;
+  color: var(--bg);
+}
+
+.float-widget__primary-link {
+  display: inline-block;
+  color: var(--bg);
+  font-weight: 700;
+  font-size: 0.85rem;
+  text-decoration: none;
+  border-bottom: 1px solid rgba(255,255,255,0.5);
+  padding-bottom: 1px;
+  transition: var(--transition);
+}
+
+.float-widget__primary-link:hover {
+  border-bottom-color: var(--bg);
+}
+
+.float-widget__hint {
+  font-family: var(--font-mono);
+  font-size: 0.65rem;
+  color: var(--bg);
+  opacity: 0.5;
+  margin-top: 0.5rem;
+  letter-spacing: 0.04em;
+}
+
+.float-widget.is-expanded .float-widget__hint { display: none; }
+
+.float-widget__extra {
+  margin-top: 0.6rem;
+  padding-top: 0.6rem;
+  border-top: 1px solid rgba(255,255,255,0.2);
+}
+
+.float-widget__links {
+  display: flex;
+  gap: 0.8rem;
+  flex-wrap: wrap;
+}
+
+.float-widget__link {
+  color: var(--bg);
+  font-size: 0.78rem;
+  text-decoration: none;
+  opacity: 0.85;
+  transition: var(--transition);
+}
+
+.float-widget__link:hover { opacity: 1; text-decoration: underline; }
+
+@keyframes slideUp {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@media (max-width: 720px) {
+  .float-widget {
+    bottom: 0.75rem;
+    right: 0.75rem;
+    left: 0.75rem;
+    width: auto;
+    max-width: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
   }
 }
 </style>

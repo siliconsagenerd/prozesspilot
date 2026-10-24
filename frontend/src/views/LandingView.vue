@@ -67,9 +67,12 @@
         <li>{{ t("landing.eval.routingPolicy") }}</li>
         <li>{{ t("landing.eval.explicitCitations") }}</li>
       </ul>
-      <p class="muted">{{ t("landing.eval.provenance") }}</p>
-      <p class="muted">{{ t("landing.eval.historical") }}</p>
-      <p class="muted">{{ t("landing.eval.current") }}</p>
+      <div class="prov-block">
+        <div class="prov-block__label">Provenance</div>
+        <p class="muted">{{ t("landing.eval.provenance") }}</p>
+        <p class="muted prov-block__line">{{ t("landing.eval.historical") }}</p>
+        <p class="muted prov-block__line">{{ t("landing.eval.current") }}</p>
+      </div>
     </section>
 
     <div class="layout">
@@ -256,23 +259,6 @@
           <p class="mono side-prov">{{ t("landing.eval.provenance") }}</p>
         </section>
 
-        <section class="side-block related-side">
-          <div class="related-badge">{{ t("landing.prov.related") }}</div>
-          <h3 class="related-title">SecureDoc-AI</h3>
-          <p class="related-desc">{{ t("landing.portfolio.body") }}</p>
-          <div class="stack-chips">
-            <span class="chip">FastAPI</span>
-            <span class="chip">Vue 3</span>
-            <span class="chip">SQLAlchemy</span>
-            <span class="chip">RAG</span>
-            <span class="chip">Spring Boot</span>
-          </div>
-          <div class="related-links">
-            <a href="https://github.com/siliconsagenerd/securedoc-ai" target="_blank" rel="noopener" class="related-link">{{ t("landing.eval.github") }}: securedoc-ai ↗</a>
-            <a href="https://github.com/siliconsagenerd/prozesspilot" target="_blank" rel="noopener" class="related-link">{{ t("landing.eval.github") }}: prozesspilot ↗</a>
-          </div>
-        </section>
-
         <section class="side-block">
           <h3 class="side-h">{{ t("landing.section.limits") }}</h3>
           <ul class="side-list">
@@ -285,6 +271,7 @@
       </aside>
     </div>
   </div>
+
 </template>
 
 
@@ -331,13 +318,28 @@ import { t } from "../i18n";
 
 .doc-title {
   font-family: var(--font-sans);
-  font-size: 3rem;
-  font-weight: 700;
-  letter-spacing: -0.02em;
+  font-size: clamp(2.5rem, 5vw, 3.5rem);
+  font-weight: 800;
+  letter-spacing: -0.035em;
   color: var(--text);
   margin-bottom: 1rem;
-  line-height: 1.1;
+  line-height: 1.05;
+  position: relative;
+  display: inline-block;
 }
+
+.doc-title::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  bottom: -0.15rem;
+  width: 3rem;
+  height: 3px;
+  background: var(--text);
+  transition: width var(--transition);
+}
+
+.doc-title:hover::after { width: 100%; }
 
 .doc-lede {
   color: var(--text-muted);
@@ -359,12 +361,29 @@ import { t } from "../i18n";
   font-size: 0.9rem;
   border-bottom: 1px solid var(--border-strong);
   padding-bottom: 1px;
+  padding-left: 0;
+  transition: var(--transition);
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+}
+
+.doc-action::after {
+  content: "→";
+  opacity: 0;
+  transform: translateX(-4px);
   transition: var(--transition);
 }
 
 .doc-action:hover {
   border-bottom-color: var(--text);
   background: var(--bg-deep);
+  padding-left: 0.4rem;
+}
+
+.doc-action:hover::after {
+  opacity: 1;
+  transform: translateX(0);
 }
 
 .rule {
@@ -379,11 +398,19 @@ import { t } from "../i18n";
 
 .section-h {
   font-family: var(--font-sans);
-  font-size: 1.1rem;
-  font-weight: 700;
+  font-size: 1.25rem;
+  font-weight: 800;
   color: var(--text);
   margin-bottom: 0.75rem;
-  letter-spacing: -0.01em;
+  letter-spacing: -0.02em;
+  padding-left: 0.85rem;
+  border-left: 3px solid var(--text);
+  line-height: 1.2;
+  transition: padding-left var(--transition), border-color var(--transition);
+}
+
+.section-h:hover {
+  padding-left: 1.1rem;
 }
 
 .doc-section p {
@@ -406,9 +433,16 @@ import { t } from "../i18n";
 .steps li {
   display: flex;
   gap: 0.9rem;
-  padding: 0.55rem 0;
+  padding: 0.6rem 0.5rem;
   border-bottom: 1px solid var(--border);
   align-items: baseline;
+  transition: background var(--transition), padding-left var(--transition);
+  border-radius: 0;
+}
+
+.steps li:hover {
+  background: var(--bg-deep);
+  padding-left: 0.85rem;
 }
 
 .steps li:last-child { border-bottom: none; }
@@ -416,19 +450,164 @@ import { t } from "../i18n";
 .step-n {
   font-family: var(--font-mono);
   font-size: 0.78rem;
-  color: var(--text-subtle);
-  min-width: 18px;
+  color: var(--text);
+  background: var(--bg-deep);
+  min-width: 22px;
+  height: 22px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  transition: background var(--transition), color var(--transition);
+}
+
+.steps li:hover .step-n {
+  background: var(--text);
+  color: var(--bg);
 }
 
 .steps strong {
-  font-weight: 600;
+  font-weight: 700;
 }
 
+.eval-summary {
+  background: var(--bg-deep);
+  border: 1px solid var(--border);
+  padding: 1.5rem 1.75rem;
+  margin-bottom: 2rem;
+  position: relative;
+  overflow: hidden;
+}
+
+.eval-summary::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 4px;
+  height: 100%;
+  background: var(--text);
+}
+
+.eval-summary h3 {
+  font-size: 1.1rem;
+  font-weight: 800;
+  letter-spacing: -0.01em;
+  margin-bottom: 0.75rem;
+}
+
+.eval-summary table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 0.75rem 0 1rem;
+  font-size: 0.85rem;
+}
+
+.eval-summary th,
+.eval-summary td {
+  padding: 0.5rem 0.6rem;
+  border-bottom: 1px solid var(--border);
+  text-align: left;
+}
+
+.eval-summary thead th {
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--text-muted);
+  border-bottom: 2px solid var(--border-strong);
+  background: var(--bg);
+}
+
+.eval-summary tbody tr {
+  transition: background var(--transition);
+}
+
+.eval-summary tbody tr:hover {
+  background: var(--surface-hover);
+}
+
+.eval-summary tbody td.mono {
+  font-family: var(--font-mono);
+}
+
+.notes {
+  list-style: none;
+  padding: 0;
+  margin: 0.75rem 0 1rem;
+  display: grid;
+  gap: 0.35rem;
+}
+
+.notes li {
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  padding: 0.35rem 0 0.35rem 1.25rem;
+  position: relative;
+  line-height: 1.5;
+  transition: color var(--transition), padding-left var(--transition);
+}
+
+.notes li::before {
+  content: "—";
+  position: absolute;
+  left: 0;
+  color: var(--text-subtle);
+  transition: color var(--transition);
+}
+
+.notes li:hover {
+  color: var(--text);
+  padding-left: 1.5rem;
+}
+
+.notes li:hover::before {
+  color: var(--text);
+}
+
+.prov-block {
+  margin-top: 1rem;
+  padding: 1rem 1.1rem;
+  border: 1px solid var(--border);
+  background: var(--bg);
+  position: relative;
+}
+
+.prov-block__label {
+  font-family: var(--font-mono);
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--bg);
+  background: var(--text);
+  display: inline-block;
+  padding: 0.1rem 0.4rem;
+  margin-bottom: 0.6rem;
+}
+
+.prov-block__line {
+  margin-top: 0.4rem;
+  padding-top: 0.4rem;
+  border-top: 1px dashed var(--border);
+}
+
+.prov-block__line:first-of-type {
+  border-top: none;
+  margin-top: 0;
+  padding-top: 0;
+}
 .trace {
   border: 1px solid var(--border-strong);
   padding: 1.25rem;
   margin-top: 1.25rem;
   background: var(--bg);
+  transition: border-color var(--transition);
+}
+
+.trace:hover {
+  border-color: var(--text);
 }
 
 .trace-row {
@@ -481,6 +660,14 @@ import { t } from "../i18n";
   color: var(--text);
   border: 1px solid var(--border);
   padding: 0.1rem 0.45rem;
+  transition: var(--transition);
+  cursor: default;
+}
+
+.cite:hover {
+  background: var(--text);
+  color: var(--bg);
+  border-color: var(--text);
 }
 
 .deflist {
@@ -521,20 +708,30 @@ import { t } from "../i18n";
 }
 
 .kpi-value {
-  font-size: 1.5rem;
-  font-weight: 700;
+  font-size: clamp(1.5rem, 2.5vw, 2rem);
+  font-weight: 800;
   color: var(--text);
-  letter-spacing: -0.02em;
+  letter-spacing: -0.03em;
+  line-height: 1;
 }
 
-.related-section {
-  margin: 0;
-}
-
-.related-card {
+.chip {
+  font-family: var(--font-sans);
+  font-size: 0.78rem;
+  padding: 0.15rem 0.5rem;
+  border: 1px solid var(--border);
   background: var(--bg-deep);
-  padding: 2rem;
-  position: relative;
+  color: var(--text);
+  border-radius: 0;
+  transition: var(--transition);
+  cursor: default;
+}
+
+.chip:hover {
+  background: var(--text);
+  color: var(--bg);
+  border-color: var(--text);
+  transform: translateY(-1px);
 }
 
 .related-card::before {
@@ -578,16 +775,6 @@ import { t } from "../i18n";
   flex-wrap: wrap;
   gap: 0.4rem;
   margin-bottom: 1rem;
-}
-
-.chip {
-  font-family: var(--font-sans);
-  font-size: 0.78rem;
-  padding: 0.15rem 0.5rem;
-  border: 1px solid var(--border);
-  background: var(--bg-deep);
-  color: var(--text);
-  border-radius: 0;
 }
 
 .related-links {
@@ -772,18 +959,23 @@ td.mono { font-family: var(--font-mono); }
   flex-direction: column;
   gap: 2rem;
   position: sticky;
-  top: 1.5rem;
+  top: 5rem;
+  animation: slideInLeft 0.6s ease-out both;
 }
 
 .side-block { padding: 0; }
 
 .side-h {
   font-family: var(--font-sans);
-  font-size: 0.95rem;
-  font-weight: 600;
+  font-size: 0.85rem;
+  font-weight: 700;
   color: var(--text);
   margin: 0 0 0.5rem;
-  letter-spacing: -0.01em;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  position: relative;
+  padding-bottom: 0.4rem;
+  border-bottom: 1px solid var(--border);
 }
 
 .side-list {
@@ -854,19 +1046,31 @@ td.mono { font-family: var(--font-mono); }
   margin: 0;
 }
 
-.related-side {
-  background: var(--bg-deep);
-  padding: 1.25rem;
-  border-left: 3px solid var(--text);
+@keyframes slideInLeft {
+  from { opacity: 0; transform: translateX(-24px); }
+  to { opacity: 1; transform: translateX(0); }
 }
+
+@keyframes slideUp {
+  from { opacity: 0; transform: translateY(16px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
 
 @media (max-width: 960px) {
   .layout { grid-template-columns: 1fr; }
   .side { position: static; }
 }
 
+
+
+
+
+
+
+
+
 @media (max-width: 720px) {
-  .kpi-strip { grid-template-columns: repeat(2, 1fr); }
   .prov { grid-template-columns: 1fr; }
   .deflist { grid-template-columns: 1fr; gap: 0; }
   .doc { padding: 0 0.75rem; }
