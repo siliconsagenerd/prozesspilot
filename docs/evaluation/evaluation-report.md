@@ -70,4 +70,4 @@ Approved protocol limits were `classify: 128`, `draft: 384`. Executed limits wer
 
 ## Human citation review
 
-Human citation review is still pending. Automated checks verify expected source retrieval, but they do not verify that every factual claim in a draft is supported by the cited source.
+Human citation review was completed for the 12-case synthetic evaluation (see docs/evaluation/human-review-consolidated-20261022.md); it is not a production audit. Automated checks verify expected source retrieval, but they do not verify that every factual claim in a draft is supported by the cited source.

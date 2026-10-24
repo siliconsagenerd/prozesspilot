@@ -6,7 +6,7 @@ Validation run ID: `validation-complaint-a8ed3ea-20261023T084124Z`
 
 ## Provider route and model identifiers
 
-- Route: OpenAI-compatible OmniRoute endpoint `http://127.0.0.1:20133/v1`
+- Route: OpenAI-compatible OmniRoute endpoint (local, not publicly exposed)
 - Configured model identifier: `laya-v2/laya-v2`
 - Provider-reported upstream model: `Beam-1.0-501B-A23B` (recorded from `response_model`; not independently verified as upstream identity)
 - Token limits: classify 1024, draft 4096
@@ -14,11 +14,11 @@ Validation run ID: `validation-complaint-a8ed3ea-20261023T084124Z`
 
 ## Artifact paths
 
-- `/home/vishrutp/projects/prozesspilot-src/data/evaluations/validation-complaint-a8ed3ea-20261023T084124Z/manifest.json`
-- `/home/vishrutp/projects/prozesspilot-src/data/evaluations/validation-complaint-a8ed3ea-20261023T084124Z/case_03_baseline.json`
-- `/home/vishrutp/projects/prozesspilot-src/data/evaluations/validation-complaint-a8ed3ea-20261023T084124Z/case_03_improved.json`
-- `/home/vishrutp/projects/prozesspilot-src/data/evaluations/validation-complaint-a8ed3ea-20261023T084124Z/case_09_baseline.json`
-- `/home/vishrutp/projects/prozesspilot-src/data/evaluations/validation-complaint-a8ed3ea-20261023T084124Z/case_09_improved.json`
+- `data/evaluations/validation-complaint-a8ed3ea-20261023T084124Z/manifest.json`
+- `data/evaluations/validation-complaint-a8ed3ea-20261023T084124Z/case_03_baseline.json`
+- `data/evaluations/validation-complaint-a8ed3ea-20261023T084124Z/case_03_improved.json`
+- `data/evaluations/validation-complaint-a8ed3ea-20261023T084124Z/case_09_baseline.json`
+- `data/evaluations/validation-complaint-a8ed3ea-20261023T084124Z/case_09_improved.json`
 
 ## Four-row result table
 

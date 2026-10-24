@@ -22,6 +22,7 @@
     <section class="eval-summary" aria-labelledby="eval-summary-title">
       <h3 id="eval-summary-title">{{ t("landing.eval.title") }}</h3>
       <p class="muted">{{ t("landing.eval.readonly") }}</p>
+      <p class="muted">{{ t("landing.eval.historicalMetrics") }}</p>
       <table>
         <thead>
           <tr>
@@ -41,6 +42,7 @@
           <tr><td>{{ t("landing.eval.tokens") }}</td><td>37085</td><td>35507</td></tr>
         </tbody>
       </table>
+      <p class="muted">{{ t("landing.eval.truncationNote") }}</p>
       <ul class="notes">
         <li>{{ t("landing.eval.mismatches") }}</li>
         <li>{{ t("landing.eval.completion") }}</li>

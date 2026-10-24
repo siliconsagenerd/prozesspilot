@@ -5,7 +5,7 @@ Current `/etc/caddy/Caddyfile`:
 ```caddy
 prozesspilot.duckdns.org {
     basicauth * {
-        demo $2a$14$SxfzrPZsyGhIOEnyAELTlOyJ7YPPRJtuz8NIiglFOYx8Nq9BzxmUy
+        demo [REDACTED_PASSWORD_HASH]
     }
     @api path /api/* /health /docs* /openapi.json
     handle @api {
@@ -38,7 +38,7 @@ prozesspilot.duckdns.org {
         }
 
         basicauth * {
-            demo $2a$14$SxfzrPZsyGhIOEnyAELTlOyJ7YPPRJtuz8NIiglFOYx8Nq9BzxmUy
+            demo [REDACTED_PASSWORD_HASH]
         }
 
         @protected path /api/* /health /docs* /openapi.json /app* /runs/* /eval /eval/*

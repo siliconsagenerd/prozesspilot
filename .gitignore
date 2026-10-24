@@ -11,3 +11,6 @@ frontend/dist/
 .pytest_cache/
 .ruff_cache/
 data/evaluations/
+
+# Synthetic demo seed data is not committed; keep local copy.
+data/customers.json

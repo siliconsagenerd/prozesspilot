@@ -1,6 +1,0 @@
-[
-  {"name": "Anna Müller", "email": "anna.mueller@example.de", "tier": "standard", "history_summary": "Kaufte Laptop-Tasche 2024. Keine Beschwerden.", "previous_orders": 1, "has_open_complaint": false},
-  {"name": "Bernd Schmidt", "email": "bernd.schmidt@example.de", "tier": "premium", "history_summary": "Stammkunde seit 2022. Hatte Versandproblem 2023 (gelöst).", "previous_orders": 12, "has_open_complaint": false},
-  {"name": "Clara Weber", "email": "clara.weber@example.de", "tier": "vip", "history_summary": "VIP-Kundin. Offene Beschwerde wegen defektem Gerät.", "previous_orders": 25, "has_open_complaint": true},
-  {"name": "David Koch", "email": "david.koch@example.de", "tier": "standard", "history_summary": "Neukunde.", "previous_orders": 0, "has_open_complaint": false}
-]
