@@ -7,7 +7,7 @@ from collections import defaultdict, deque
 
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import HTMLResponse
+from fastapi.responses import HTMLResponse, JSONResponse
 from jinja2 import Environment, FileSystemLoader
 from pydantic import BaseModel, Field
 from sqlalchemy import select
@@ -32,6 +32,14 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+@app.middleware("http")
+async def protect_operator_api(request: Request, call_next):
+    path = request.url.path
+    if settings.operator_auth_required and path.startswith("/api/"):
+        if request.headers.get("x-prozesspilot-operator") != "1":
+            return JSONResponse({"detail": "authentication required"}, status_code=401)
+    return await call_next(request)
 
 TEMPLATES = Environment(
     loader=FileSystemLoader(str(settings.data_dir.parent / "src" / "prozesspilot" / "templates")),
@@ -61,6 +69,15 @@ def startup():
 @app.get("/health")
 def health():
     return {"status": "ok", "app": settings.app_name}
+
+@app.get("/public/demo-snapshot")
+def public_demo_snapshot():
+    import json
+    from pathlib import Path
+
+    snapshot_path = Path(__file__).resolve().parent / "data" / "demo_snapshot.json"
+    with snapshot_path.open("r", encoding="utf-8") as f:
+        return json.load(f)
 
 
 # Customers

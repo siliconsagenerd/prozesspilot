@@ -4,11 +4,15 @@ import App from "./App.vue";
 import InboxView from "./views/InboxView.vue";
 import RunView from "./views/RunView.vue";
 import EvalView from "./views/EvalView.vue";
+import LandingView from "./views/LandingView.vue";
+import DemoView from "./views/DemoView.vue";
 
 const router = createRouter({
   history: createWebHistory(),
   routes: [
-    { path: "/", component: InboxView },
+    { path: "/", component: LandingView },
+    { path: "/demo", component: DemoView },
+    { path: "/app", component: InboxView },
     { path: "/runs/:id", component: RunView },
     { path: "/eval", component: EvalView },
   ],

@@ -53,6 +53,8 @@ class Settings(BaseSettings):
 
     # Mocked outbound
     mock_email_dir: Path = ROOT / "data" / "mock_emails"
+    # Public demo safety
+    operator_auth_required: bool = False
 
     @property
     def is_cloud_key_present(self) -> bool:

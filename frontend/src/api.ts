@@ -1,5 +1,10 @@
 export const API = {
   base: "/api",
+  async getDemoSnapshot() {
+    const response = await fetch("/public/demo-snapshot");
+    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+    return response.json();
+  },
 
   async listInquiries() {
     return requestJson<any[]>(`${this.base}/inquiries`);

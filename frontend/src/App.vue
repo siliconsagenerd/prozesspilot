@@ -7,7 +7,9 @@
       </div>
       <div class="topbar-right">
         <nav>
-          <router-link to="/" class="nav-link">{{ t('nav.inbox') }}</router-link>
+          <router-link to="/" class="nav-link">{{ t('nav.landing') }}</router-link>
+          <router-link to="/demo" class="nav-link">{{ t('nav.demo') }}</router-link>
+          <router-link to="/app" class="nav-link">{{ t('nav.operator') }}</router-link>
           <router-link to="/eval" class="nav-link">{{ t('nav.eval') }}</router-link>
         </nav>
         <button class="lang-toggle" @click="toggleLocale" :aria-label="t('lang.toggle')">
