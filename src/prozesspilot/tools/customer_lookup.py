@@ -14,7 +14,8 @@ async def customer_lookup(email: str | None = None, name: str | None = None) -> 
         if email:
             q = q.where(Customer.email == email)
         elif name:
-            q = q.where(Customer.name.ilike(f"%{name}%"))
+            safe_name = name.replace("%", "\\%").replace("_", "\\_")
+            q = q.where(Customer.name.ilike(f"%{safe_name}%", escape="\\"))
         c = s.execute(q).scalar_one_or_none()
         if c is None:
             return {"found": False, "customer": None}
