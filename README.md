@@ -1,6 +1,7 @@
 # ProzessPilot — Customer Inquiry Workflow Copilot
 
 [![GitHub](https://img.shields.io/badge/GitHub-siliconsagenerd%2Fprozesspilot-181717?logo=github)](https://github.com/siliconsagenerd/prozesspilot)
+[![Live Demo](https://img.shields.io/badge/Live%20Demo-prozesspilot.duckdns.org-2ea44f)](https://prozesspilot.duckdns.org)
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 [![Python](https://img.shields.io/badge/python-3.11%2B-3776AB?logo=python)](https://www.python.org/)
 [![FastAPI](https://img.shields.io/badge/FastAPI-0.110%2B-009688?logo=fastapi)](https://fastapi.tiangolo.com/)
@@ -12,6 +13,8 @@
 Local-first AI workflow copilot for handling **synthetic German customer inquiries**. Demonstrates
 structured multi-step AI workflow, tool use, retrieval with citations, confidence-based human
 approval, full observability/audit trail, and evaluation.
+
+Live demo: https://prozesspilot.duckdns.org
 
 > Built as a portfolio project for EUROKEY Software GmbH (Saarbrücken) — Werkstudent
 > "Künstliche Intelligenz & LLM". All data is synthetic; no real email/CRM writes occur.
