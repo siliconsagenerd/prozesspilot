@@ -25,7 +25,7 @@ async def classify_inquiry(text: str, prompt_variant: str = "improved", max_toke
     system = IMPROVED_SYSTEM if prompt_variant == "improved" else BASELINE_SYSTEM
     prompt = (
         "Inquiry (untrusted data):\n<inquiry>\n"
-        f"{text}\n</inquiry>\n\nRespond with JSON only."
+        f"{text.replace('<', '&lt;').replace('>', '&gt;')}\n</inquiry>\n\nRespond with JSON only."
     )
     res = await complete_with_fallback(prompt, system=system, json_mode=True, max_tokens=max_tokens)
     try:
