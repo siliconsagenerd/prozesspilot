@@ -49,6 +49,8 @@
         <li>{{ t("landing.eval.limits") }}</li>
         <li>{{ t("landing.eval.retrieval") }}</li>
         <li>{{ t("landing.eval.citation") }}</li>
+        <li>{{ t("landing.eval.routingPolicy") }}</li>
+        <li>{{ t("landing.eval.explicitCitations") }}</li>
       </ul>
       <p class="muted">{{ t("landing.eval.provenance") }}</p>
       <p class="muted">{{ t("landing.eval.historical") }}</p>
