@@ -1,4 +1,5 @@
 <template>
+
   <div class="run-view">
     <div v-if="run" class="run-body">
       <div class="page-head">
@@ -7,6 +8,7 @@
           <h2>{{ t('run.workflow') }} <span class="mono-run-id">{{ run.id }}</span></h2>
         </div>
         <span class="badge" :class="statusClass(run.state)">{{ run.state }}</span>
+
       </div>
 
       <div class="metric-grid">

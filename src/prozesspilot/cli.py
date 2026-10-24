@@ -31,7 +31,8 @@ def seed():
     """Seed synthetic customers and knowledge base."""
     init_db()
     data_dir = ROOT / "data"
-    customers = json.loads((data_dir / "customers.json").read_text(encoding="utf-8"))
+    customers_path = data_dir / "customers.json"
+    customers = json.loads(customers_path.read_text(encoding="utf-8")) if customers_path.exists() else []
     kb_files = sorted((data_dir / "kb").glob("*.json"))
     with db_session() as s:
         for c in customers:

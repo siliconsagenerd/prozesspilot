@@ -34,7 +34,43 @@
       </div>
     </div>
 
-    <hr class="rule" />
+    <section class="eval-summary" aria-labelledby="eval-summary-title">
+      <h3 id="eval-summary-title">{{ t("landing.eval.title") }}</h3>
+      <p class="muted">{{ t("landing.eval.readonly") }}</p>
+      <p class="muted">{{ t("landing.eval.historicalMetrics") }}</p>
+      <table>
+        <thead>
+          <tr>
+            <th>{{ t("landing.eval.metric") }}</th>
+            <th>Baseline</th>
+            <th>Improved</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr><td>{{ t("landing.eval.workflows") }}</td><td>12</td><td>12</td></tr>
+          <tr><td>{{ t("landing.eval.classification") }}</td><td>12/12</td><td>12/12</td></tr>
+          <tr><td>{{ t("landing.eval.routing") }}</td><td>11/12</td><td>10/12</td></tr>
+          <tr><td>{{ t("landing.eval.sources") }}</td><td>9/12</td><td>9/12</td></tr>
+          <tr><td>{{ t("landing.eval.truncation") }}</td><td>12/12</td><td>9/12</td></tr>
+          <tr><td>{{ t("landing.eval.cost") }}</td><td>0.010177 USD</td><td>0.008665 USD</td></tr>
+          <tr><td>{{ t("landing.eval.latency") }}</td><td>94603 ms</td><td>71849 ms</td></tr>
+          <tr><td>{{ t("landing.eval.tokens") }}</td><td>37085</td><td>35507</td></tr>
+        </tbody>
+      </table>
+      <p class="muted">{{ t("landing.eval.truncationNote") }}</p>
+      <ul class="notes">
+        <li>{{ t("landing.eval.mismatches") }}</li>
+        <li>{{ t("landing.eval.completion") }}</li>
+        <li>{{ t("landing.eval.limits") }}</li>
+        <li>{{ t("landing.eval.retrieval") }}</li>
+        <li>{{ t("landing.eval.citation") }}</li>
+        <li>{{ t("landing.eval.routingPolicy") }}</li>
+        <li>{{ t("landing.eval.explicitCitations") }}</li>
+      </ul>
+      <p class="muted">{{ t("landing.eval.provenance") }}</p>
+      <p class="muted">{{ t("landing.eval.historical") }}</p>
+      <p class="muted">{{ t("landing.eval.current") }}</p>
+    </section>
 
     <div class="layout">
       <main class="main">

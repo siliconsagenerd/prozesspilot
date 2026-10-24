@@ -41,6 +41,7 @@ cd frontend && npm install && npm run dev
 ### Bekannte Einschränkungen
 
 - Retrieval ist keyword/TF-IDF, nicht embeddings-basiert.
+- Geplant: semantische, embedding-basierte Retrieval-Ergänzung zum aktuellen Keyword-/TF-IDF-Retrieval.
 - Evaluation umfasst 12 synthetische Fälle; keine statistische Signifikanz.
 - Keine echte Authentifizierung oder Multi-Tenancy (außerhalb des v1-Umfangs).
 - Deutsche Antwortqualität hängt vom Modell ab.
@@ -50,7 +51,6 @@ cd frontend && npm install && npm run dev
 ## English
 
 ### Live demo
-- URL: https://prozesspilot.duckdns.org
 - Business problem: repetitive customer-service inquiries require classification, knowledge lookup, and draft replies; this project demonstrates a human-in-the-loop workflow that keeps drafts editable and routes uncertain or sensitive cases for approval.
 - Access requires credentials provided separately.
 - The public deployment serves the built frontend through Caddy with basic
@@ -260,6 +260,7 @@ npm run build
 
 ## Known limitations
 - Retrieval is keyword/TF-IDF, not embedding-based (Chroma optional upgrade).
+- Planned: semantic embedding-based retrieval to complement the current keyword/TF-IDF retrieval.
 - Evaluation set is small (12 cases); no statistical significance claimed.
 - LLM judge is not used as objective truth.
 - No real auth/multi-tenancy (out of scope for v1).

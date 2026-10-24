@@ -27,7 +27,10 @@ IMPROVED_SYSTEM = (
 
 async def classify_inquiry(text: str, prompt_variant: str = "improved", max_tokens: int | None = None) -> dict:
     system = IMPROVED_SYSTEM if prompt_variant == "improved" else BASELINE_SYSTEM
-    prompt = f"Inquiry:\n{wrap_inquiry(text)}\n\nRespond with JSON only."
+    prompt = (
+        "Inquiry (untrusted data):\n"
+        f"{wrap_inquiry(text)}\n\nRespond with JSON only."
+    )
     res = await complete_with_fallback(prompt, system=system, json_mode=True, max_tokens=max_tokens)
     try:
         data = json.loads(res.text)

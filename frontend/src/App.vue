@@ -362,6 +362,7 @@ body {
   .main-content {
     padding: 1.5rem 1rem 2.5rem;
   }
+
   .footer-inner {
     padding: 0 1rem;
     flex-direction: column;
@@ -369,3 +370,4 @@ body {
   }
 }
 </style>
+

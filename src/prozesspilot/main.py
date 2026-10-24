@@ -28,9 +28,13 @@ from prozesspilot.observability.audit import audit
 app = FastAPI(title="ProzessPilot")
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
-    allow_methods=["*"],
-    allow_headers=["*"],
+    allow_origins=[
+        "https://prozesspilot.duckdns.org",
+        "http://localhost:5173",
+        "http://127.0.0.1:5173",
+    ],
+    allow_methods=["GET", "POST", "OPTIONS"],
+    allow_headers=["Content-Type", "X-ProzessPilot-Operator"],
 )
 
 @app.middleware("http")
@@ -40,6 +44,17 @@ async def protect_operator_api(request: Request, call_next):
         if request.headers.get("x-prozesspilot-operator") != "1":
             return JSONResponse({"detail": "authentication required"}, status_code=401)
     return await call_next(request)
+
+@app.middleware("http")
+async def security_headers(request: Request, call_next):
+    response = await call_next(request)
+    response.headers["X-Content-Type-Options"] = "nosniff"
+    response.headers["X-Frame-Options"] = "DENY"
+    response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
+    response.headers["Permissions-Policy"] = "geolocation=(), microphone=(), camera=()"
+    if request.url.scheme == "https":
+        response.headers["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains"
+    return response
 
 TEMPLATES = Environment(
     loader=FileSystemLoader(str(settings.data_dir.parent / "src" / "prozesspilot" / "templates")),
@@ -58,7 +73,6 @@ class ApprovalIn(BaseModel):
     action: str  # approve / edit_approve / reject
     edited_text: str | None = None
     reason: str | None = None
-    actor: str = "operator"
 
 
 @app.on_event("startup")
@@ -71,7 +85,8 @@ def health():
     return {"status": "ok", "app": settings.app_name}
 
 @app.get("/public/demo-snapshot")
-def public_demo_snapshot():
+def public_demo_snapshot(request: Request):
+    _rate_limit(request.client.host if request.client else "anon")
     import json
     from pathlib import Path
 
@@ -256,7 +271,7 @@ async def approve(run_id: str, payload: ApprovalIn):
         payload.action,
         edited_text=payload.edited_text,
         reason=payload.reason,
-        actor=payload.actor,
+        actor="operator",
     )
     return {"ok": True}
 
