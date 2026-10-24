@@ -6,9 +6,9 @@
     </div>
 
     <div class="meta">
-      <div class="meta-item"><span class="label">{{ t('run.classification') }}</span><span>{{ run.classification || "—" }}</span></div>
-      <div class="meta-item"><span class="label">{{ t('run.confidence') }}</span><span>{{ run.confidence ?? "—" }}</span></div>
-      <div class="meta-item"><span class="label">{{ t('run.routing') }}</span><span>{{ run.routing_decision || "—" }}</span></div>
+      <div class="meta-item"><span class="label">{{ t('run.classification') }}</span><span>{{ run.classification || "-" }}</span></div>
+      <div class="meta-item"><span class="label">{{ t('run.confidence') }}</span><span>{{ run.confidence ?? "-" }}</span></div>
+      <div class="meta-item"><span class="label">{{ t('run.routing') }}</span><span>{{ run.routing_decision || "-" }}</span></div>
       <div class="meta-item"><span class="label">{{ t('run.cost') }}</span><span class="mono">{{ run.total_cost_usd }} USD</span></div>
       <div class="meta-item"><span class="label">{{ t('run.latency') }}</span><span class="mono">{{ run.total_latency_ms }} ms</span></div>
     </div>

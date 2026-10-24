@@ -56,7 +56,7 @@ async function runEval() {
 }
 
 function pct(v: any) {
-  if (v == null) return "—";
+  if (v == null) return "-";
   const n = Number(v);
   return isNaN(n) ? v : (n <= 1 ? (n * 100).toFixed(1) + "%" : n + "%");
 }
