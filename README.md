@@ -99,15 +99,20 @@ Code paths: `src/prozesspilot/agents/runtime.py`, `src/prozesspilot/agents/draft
   approval is still required before any simulated outbound action.
 
 ## Screenshots
-Clean screenshots of the live synthetic-data UI are stored under
+Clean screenshots of the synthetic-data UI are stored under
 `docs/demo/screenshots/`:
-
 - `inbox.png` - synthetic inquiry list.
-- `run-detail.png` - successful seeded run with full editable draft,
+- `run-detail.png` - existing seeded run with full editable draft,
   explicit `[Title]` citations, cited sources, classification/draft
   confidence, routing state, and approval controls.
 - `eval.png` - Evaluation screen; historical runs used the earlier
   evaluation route above, not the current live model.
+
+Screenshot capture note: these images were captured with a local frontend
+connected to the deployed backend through a tunnel, using existing synthetic
+demo records. They demonstrate UI state only and do not by themselves verify
+the public login flow; that flow was verified separately in an earlier public
+browser smoke test. No approval or customer-sending action was performed.
 
 ## Architecture
 
