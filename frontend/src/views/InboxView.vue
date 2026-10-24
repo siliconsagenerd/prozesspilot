@@ -46,7 +46,7 @@ function statusClass(s: string) {
 }
 
 async function load() {
-  loadingList.value = true;
+  loadingList.value = true; error.value = "";
   try { inquiries.value = await API.listInquiries(); }
   catch (e: any) { error.value = e.message; }
   finally { loadingList.value = false; }

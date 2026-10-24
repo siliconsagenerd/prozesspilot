@@ -84,6 +84,7 @@ import { t, toggleLocale } from "./i18n";
     transition: background .15s var(--ease), color .15s var(--ease);
   }
   .nav-link:hover { background: var(--accent-soft); color: var(--accent); }
+  .nav-link:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
   .topbar-right { display: flex; align-items: center; gap: .75rem; }
   .lang-toggle {
     padding: .4rem .7rem; border-radius: 999px; background: rgba(255,255,255,.72);
