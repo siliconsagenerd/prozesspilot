@@ -1,77 +1,113 @@
 <template>
-  <section v-if="run">
-    <div class="title-row">
-      <h2>{{ t('run.workflow') }} <span class="mono">{{ run.id }}</span></h2>
-      <span class="badge" :class="statusClass(run.state)">{{ run.state }}</span>
-    </div>
-
-    <div class="meta">
-      <div class="meta-item"><span class="label">{{ t('run.classification') }}</span><span>{{ run.classification || "—" }}</span></div>
-      <div class="meta-item"><span class="label">{{ t('run.confidence') }}</span><span>{{ run.confidence ?? "—" }}</span></div>
-      <div class="meta-item"><span class="label">{{ t('run.routing') }}</span><span>{{ run.routing_decision || "—" }}</span></div>
-      <div class="meta-item"><span class="label">{{ t('run.cost') }}</span><span class="mono">{{ run.total_cost_usd }} USD</span></div>
-      <div class="meta-item"><span class="label">{{ t('run.latency') }}</span><span class="mono">{{ run.total_latency_ms }} ms</span></div>
-    </div>
-
-    <div v-if="run.customer" class="card">
-      <div class="card-head">{{ t('run.customer') }}</div>
-      <div><strong>{{ run.customer.name }}</strong> <span class="badge tier">{{ run.customer.tier }}</span></div>
-      <div class="sub">{{ run.customer.email }}</div>
-      <div class="history"><em>{{ run.customer.history }}</em></div>
-    </div>
-
-    <div class="card">
-      <div class="card-head">{{ t('run.inquiry') }}</div>
-      <pre>{{ run.inquiry?.body }}</pre>
-    </div>
-
-    <h3>{{ t('run.steps') }}</h3>
-    <div v-for="st in run.steps" :key="st.index" class="step">
-      <div class="step-head">
-        <span class="step-num">{{ st.index }}</span>
-        <strong>{{ st.name }}</strong>
-        <span class="badge" :class="statusClass(st.status)">{{ st.status }}</span>
-        <span v-if="st.model_provider" class="mono model">{{ st.model_provider }}/{{ st.model_name }}</span>
+  <div class="run-view">
+    <div v-if="run" class="run-body">
+      <div class="page-head">
+        <div>
+          <div class="eyebrow">Workflow Trace</div>
+          <h2>{{ t('run.workflow') }} <span class="mono-run-id">{{ run.id }}</span></h2>
+        </div>
+        <span class="badge" :class="statusClass(run.state)">{{ run.state }}</span>
       </div>
-      <div class="step-metrics mono">{{ t('run.latencyShort') }} {{ st.latency_ms }}ms · {{ t('run.costShort') }} {{ st.cost_usd }}</div>
-      <div class="kv"><span class="label">{{ t('run.input') }}</span><span>{{ st.input_summary }}</span></div>
-      <div class="kv"><span class="label">{{ t('run.output') }}</span><span>{{ st.output_summary }}</span></div>
-      <div v-if="st.citations?.length" class="kv">
-        <span class="label">{{ t('run.sources') }}</span>
-        <span><span v-for="c in st.citations" :key="c.id" class="cite">[{{ c.title }}]</span></span>
+
+      <div class="metric-grid">
+        <div class="metric-tile">
+          <span class="tile-label">{{ t('run.classification') }}</span>
+          <span class="tile-value">{{ run.classification || "-" }}</span>
+        </div>
+        <div class="metric-tile">
+          <span class="tile-label">{{ t('run.confidence') }}</span>
+          <span class="tile-value">{{ run.confidence ?? "-" }}</span>
+        </div>
+        <div class="metric-tile">
+          <span class="tile-label">{{ t('run.routing') }}</span>
+          <span class="tile-value">{{ run.routing_decision || "-" }}</span>
+        </div>
+        <div class="metric-tile">
+          <span class="tile-label">{{ t('run.cost') }}</span>
+          <span class="tile-value mono">{{ run.total_cost_usd }} USD</span>
+        </div>
+        <div class="metric-tile">
+          <span class="tile-label">{{ t('run.latency') }}</span>
+          <span class="tile-value mono">{{ run.total_latency_ms }} ms</span>
+        </div>
       </div>
-      <div v-if="st.error" class="error">Fehler: {{ st.error }}</div>
+
+      <div v-if="run.customer" class="panel">
+        <div class="panel-head">
+          <span class="panel-label">{{ t('run.customer') }}</span>
+        </div>
+        <div class="customer-line">
+          <strong>{{ run.customer.name }}</strong>
+          <span class="badge tier">{{ run.customer.tier }}</span>
+          <span class="customer-email">{{ run.customer.email }}</span>
+        </div>
+        <div class="history"><em>{{ run.customer.history }}</em></div>
+      </div>
+
+      <div class="panel">
+        <div class="panel-head">
+          <span class="panel-label">{{ t('run.inquiry') }}</span>
+        </div>
+        <pre class="mono-block">{{ run.inquiry?.body }}</pre>
+      </div>
+
+      <h3 class="section-title">{{ t('run.steps') }}</h3>
+      <div v-for="st in run.steps" :key="st.index" class="step">
+        <div class="step-head">
+          <span class="step-num">{{ st.index }}</span>
+          <strong class="step-name">{{ st.name }}</strong>
+          <span class="badge" :class="statusClass(st.status)">{{ st.status }}</span>
+          <span v-if="st.model_provider" class="step-model mono">{{ st.model_provider }}/{{ st.model_name }}</span>
+        </div>
+        <div class="step-metrics mono">{{ t('run.latencyShort') }} {{ st.latency_ms }}ms · {{ t('run.costShort') }} {{ st.cost_usd }}</div>
+        <div class="kv"><span class="kv-label">{{ t('run.input') }}</span><span class="kv-value">{{ st.input_summary }}</span></div>
+        <div class="kv"><span class="kv-label">{{ t('run.output') }}</span><span class="kv-value">{{ st.output_summary }}</span></div>
+        <div v-if="st.citations?.length" class="kv">
+          <span class="kv-label">{{ t('run.sources') }}</span>
+          <span class="kv-value">
+            <span v-for="c in st.citations" :key="c.id" class="cite">[{{ c.title }}]</span>
+          </span>
+        </div>
+        <div v-if="st.error" class="error-line">{{ t("run.error") }}: {{ st.error }}</div>
+      </div>
+
+      <div v-if="run.draft" class="panel">
+        <div class="panel-head">
+          <span class="panel-label">{{ t('run.draft') }}</span>
+        </div>
+        <pre class="mono-block">{{ run.draft.original_text }}</pre>
+        <div class="reasoning"><em>{{ t('run.reasoning') }}</em> {{ run.draft.reasoning }}</div>
+        <div v-if="run.draft.edited_text">
+          <h4 class="edited-title">{{ t('run.edited') }}</h4>
+          <pre class="mono-block">{{ run.draft.edited_text }}</pre>
+        </div>
+      </div>
+
+      <div v-if="run.state === 'AwaitingApproval' || run.state === 'ReadyForReview'" class="panel approval">
+        <div class="panel-head">
+          <span class="panel-label">{{ t('run.approval') }}</span>
+        </div>
+        <textarea v-model="edited" rows="6" class="compose-input"></textarea>
+        <input v-model="reason" :placeholder="t('run.rejectReason')" class="compose-input" />
+        <div class="approval-actions">
+          <button class="btn-approve" @click="act('approve')" :disabled="acting">{{ t('run.approve') }}</button>
+          <button class="btn-edit" @click="act('edit_approve')" :disabled="acting">{{ t('run.editApprove') }}</button>
+          <button class="btn-reject" @click="act('reject')" :disabled="acting">{{ t('run.reject') }}</button>
+        </div>
+      </div>
+
+      <p v-if="msg" class="success" role="status">{{ msg }}</p>
+      <p v-if="error" class="error" role="alert">{{ error }}</p>
     </div>
 
-    <div v-if="run.draft" class="card">
-      <div class="card-head">{{ t('run.draft') }}</div>
-      <pre>{{ run.draft.original_text }}</pre>
-      <div class="reasoning"><em>{{ t('run.reasoning') }}</em> {{ run.draft.reasoning }}</div>
-      <div v-if="run.draft.edited_text">
-        <h4>{{ t('run.edited') }}</h4>
-        <pre>{{ run.draft.edited_text }}</pre>
-      </div>
+    <div v-else-if="error" class="error-state" role="alert">
+      <p>{{ error }}</p>
+      <router-link to="/" class="back-link">{{ t('run.back') }}</router-link>
     </div>
-
-    <div v-if="run.state === 'AwaitingApproval' || run.state === 'ReadyForReview'" class="card approval">
-      <div class="card-head">{{ t('run.approval') }}</div>
-      <textarea v-model="edited" rows="6"></textarea>
-      <input v-model="reason" :placeholder="t('run.rejectReason')" />
-      <div class="actions">
-        <button @click="act('approve')" :disabled="acting">{{ t('run.approve') }}</button>
-        <button class="secondary" @click="act('edit_approve')" :disabled="acting">{{ t('run.editApprove') }}</button>
-        <button class="danger" @click="act('reject')" :disabled="acting">{{ t('run.reject') }}</button>
-      </div>
-    </div>
-
-    <p v-if="msg" class="success" role="status">{{ msg }}</p>
-    <p v-if="error" class="error" role="alert">{{ error }}</p>
-  </section>
-  <div v-else-if="error" class="error" role="alert" style="padding:1rem 0">
-    {{ error }} <router-link to="/">{{ t('run.back') }}</router-link>
+    <div v-else class="loading-state">{{ t('run.loading') }}</div>
   </div>
-  <div v-else class="loading">{{ t('run.loading') }}</div>
 </template>
+
 <script setup lang="ts">
 import { ref, onMounted } from "vue";
 import { useRoute } from "vue-router";
@@ -121,51 +157,136 @@ function statusClass(s: string) {
 
 onMounted(load);
 </script>
+
 <style scoped>
-  .title-row { display: flex; align-items: center; gap: .75rem; flex-wrap: wrap; margin-bottom: .5rem; }
-  .meta {
-    display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
-    gap: .5rem; margin: 1rem 0 1.25rem;
-  }
-  .meta-item {
-    background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-sm);
-    padding: .6rem .85rem; display: flex; flex-direction: column; gap: .15rem;
-  }
-  .label { font-size: .72rem; color: var(--text-2); text-transform: uppercase; letter-spacing: .06em; font-weight: 600; }
-  .card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 1.25rem; margin: 1rem 0; box-shadow: var(--shadow); }
-  .card-head { font-size: .72rem; color: var(--text-2); text-transform: uppercase; letter-spacing: .06em; font-weight: 600; margin-bottom: .5rem; }
-  .sub { color: var(--text-2); font-size: .85rem; }
-  .history { margin-top: .4rem; color: var(--text-2); font-size: .85rem; }
-  .tier { background: #e8e8ed; }
-  .step {
-    border-left: 3px solid var(--accent); padding: .85rem 1rem; margin: .6rem 0;
-    background: var(--surface); border-radius: var(--radius-sm); border: 1px solid var(--border);
-    border-left: 3px solid var(--accent); box-shadow: 0 1px 2px rgba(0,0,0,.03);
-  }
-  .step-head { display: flex; align-items: center; gap: .5rem; flex-wrap: wrap; }
-  .step-num {
-    width: 22px; height: 22px; border-radius: 50%; background: var(--accent-soft);
-    color: var(--accent); font-size: .75rem; font-weight: 700;
-    display: inline-flex; align-items: center; justify-content: center;
-  }
-  .model { color: var(--text-2); }
-  .step-metrics { color: var(--text-2); font-size: .8rem; margin: .35rem 0; }
-  .kv { display: grid; grid-template-columns: 72px 1fr; gap: .5rem; margin: .25rem 0; font-size: .9rem; }
-  .kv .label { text-transform: none; letter-spacing: 0; font-size: .8rem; }
-  .cite { color: var(--accent); margin-right: .35rem; }
-  .reasoning { margin-top: .75rem; color: var(--text-2); font-size: .9rem; }
-  .approval textarea { width: 100%; min-height: 120px; resize: vertical; }
-  .approval input { width: 100%; margin: .6rem 0 .8rem; }
-  .actions { display: flex; gap: .5rem; flex-wrap: wrap; margin-top: .5rem; }
-  .secondary { background: #e8e8ed; color: var(--text); }
-  .secondary:hover:not(:disabled) { box-shadow: 0 4px 12px rgba(0,0,0,.08); }
-  .danger { background: #d70015; }
-  .danger:hover:not(:disabled) { box-shadow: 0 4px 12px rgba(215,0,21,.3); }
-  pre { white-space: pre-wrap; word-break: break-word; background: var(--surface-2); padding: .75rem; border-radius: var(--radius-sm); margin: .5rem 0 0; border: 1px solid var(--border); }
-  .success { color: #1e7e34; font-weight: 500; }
-  .error { color: #d70015; }
-  .loading { color: var(--text-2); padding: 2rem 0; text-align: center; }
-  .badge.ok { background: #e3f3e8; color: #1e7e34; }
-  .badge.warn { background: #fff4e0; color: #9a6700; }
-  .badge.bad { background: #fde2e2; color: #c00; }
+.run-view { display: flex; flex-direction: column; gap: 1.5rem; }
+
+.page-head {
+  display: flex; align-items: flex-end; justify-content: space-between;
+  gap: 1rem; flex-wrap: wrap;
+}
+.eyebrow {
+  font-size: .72rem; letter-spacing: .12em;
+  color: var(--accent); font-weight: 700; margin-bottom: .35rem;
+}
+.page-head h2 { font-size: 1.6rem; font-weight: 700; color: var(--text); display: flex; align-items: center; gap: .6rem; flex-wrap: wrap; }
+.mono-run-id { font-family: var(--font-mono); font-size: .85rem; color: var(--text-muted); background: var(--surface-hover); padding: .1rem .4rem; border-radius: 4px; }
+
+.metric-grid {
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 1rem;
+}
+.metric-tile {
+  background: var(--surface-card); border: 1px solid var(--border);
+  border-radius: var(--radius-md); padding: 1rem 1.15rem;
+  display: flex; flex-direction: column; gap: .3rem; transition: var(--transition);
+}
+.metric-tile:hover { border-color: var(--border-active); }
+.tile-label {
+  font-size: .68rem; letter-spacing: .08em;
+  color: var(--text-muted); font-weight: 700;
+}
+.tile-value { font-size: 1.05rem; font-weight: 700; color: var(--text); }
+
+.panel {
+  background: var(--surface-card); border: 1px solid var(--border);
+  border-radius: var(--radius-lg); padding: 1.5rem;
+  display: flex; flex-direction: column; gap: .85rem;
+}
+.panel-head { display: flex; align-items: center; justify-content: space-between; }
+.panel-label {
+  font-size: .68rem; letter-spacing: .1em;
+  color: var(--text-muted); font-weight: 700;
+}
+
+.customer-line {
+  display: flex; align-items: center; gap: .7rem; flex-wrap: wrap;
+  color: var(--text); font-weight: 700;
+}
+.customer-email { color: var(--text-muted); font-size: .85rem; font-weight: 500; }
+.history { color: var(--text-muted); font-size: .85rem; }
+.badge.tier { background: var(--accent-soft); color: var(--accent); }
+
+.mono-block {
+  font-family: var(--font-mono); font-size: .85rem; line-height: 1.6;
+  white-space: pre-wrap; word-break: break-word; color: var(--text);
+  background: var(--bg-deep); border: 1px solid var(--border);
+  border-radius: var(--radius-sm); padding: 1rem; margin: 0;
+}
+
+.section-title { font-size: 1.1rem; font-weight: 700; color: var(--text); margin: 0; }
+
+.step {
+  border-left: 3px solid var(--accent);
+  background: var(--surface-card); border: 1px solid var(--border);
+  border-radius: var(--radius-md); padding: 1.1rem 1.25rem;
+  display: flex; flex-direction: column; gap: .5rem;
+}
+.step-head { display: flex; align-items: center; gap: .65rem; flex-wrap: wrap; }
+.step-num {
+  width: 24px; height: 24px; border-radius: 50%;
+  background: var(--accent-soft); color: var(--accent);
+  font-size: .78rem; font-weight: 700;
+  display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0;
+}
+.step-name { color: var(--text); font-weight: 600; }
+.step-model { color: var(--text-muted); font-size: .78rem; }
+.step-metrics { color: var(--text-muted); font-size: .78rem; }
+
+.kv { display: grid; grid-template-columns: 90px 1fr; gap: .75rem; font-size: .88rem; }
+.kv-label { color: var(--text-muted); font-weight: 600; }
+.kv-value { color: var(--text); }
+.cite { color: var(--accent); margin-right: .35rem; }
+
+.error-line { color: var(--danger); font-size: .85rem; }
+
+.reasoning { color: var(--text-muted); font-size: .88rem; }
+.edited-title { font-size: .95rem; font-weight: 700; color: var(--text); margin: 0; }
+
+.compose-input {
+  width: 100%; background: var(--bg-deep); border: 1px solid var(--border);
+  border-radius: var(--radius-sm); padding: .8rem .95rem;
+  color: var(--text); font-size: .88rem; font-family: var(--font-sans);
+  transition: var(--transition); resize: vertical;
+}
+.compose-input:focus {
+  outline: none; border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-soft);
+}
+.compose-input::placeholder { color: var(--text-subtle); }
+
+.approval { border-color: var(--warning); }
+.approval .panel-label { color: var(--warning); }
+.approval-actions { display: flex; gap: .65rem; flex-wrap: wrap; }
+
+.btn-approve, .btn-edit, .btn-reject {
+  border: none; border-radius: var(--radius-md);
+  padding: .6rem 1.2rem; font-size: .88rem; font-weight: 600;
+  cursor: pointer; transition: var(--transition); color: var(--text);
+}
+.btn-approve { background: var(--success); box-shadow: none; }
+.btn-approve:hover:not(:disabled) { background: var(--success); transform: translateY(-1px); }
+.btn-edit { background: var(--accent); box-shadow: none; }
+.btn-edit:hover:not(:disabled) { background: var(--accent-dark); transform: translateY(-1px); }
+.btn-reject { background: var(--danger); box-shadow: none; }
+.btn-reject:hover:not(:disabled) { background: var(--danger); transform: translateY(-1px); }
+.btn-approve:disabled, .btn-edit:disabled, .btn-reject:disabled { opacity: .5; cursor: not-allowed; }
+
+.success { color: var(--success); font-weight: 600; margin: 0; }
+.error { color: var(--danger); margin: 0; }
+
+.loading-state { color: var(--text-muted); text-align: center; padding: 3rem 0; }
+.error-state { display: flex; flex-direction: column; gap: .75rem; color: var(--danger); }
+.back-link {
+  color: var(--accent); text-decoration: none; font-weight: 600;
+  font-size: .9rem; transition: var(--transition);
+}
+.back-link:hover { color: var(--accent); }
+
+.badge {
+  font-size: .72rem; font-weight: 700; padding: .25rem .6rem;
+  border-radius: 4px; letter-spacing: .04em;
+}
+.badge.ok { background: var(--success-soft); color: var(--success); }
+.badge.warn { background: var(--warning-soft); color: var(--warning); }
+.badge.bad { background: var(--danger-soft); color: var(--danger); }
 </style>

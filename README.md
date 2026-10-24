@@ -1,4 +1,4 @@
-# ProzessPilot — Customer Inquiry Workflow Copilot
+# ProzessPilot: Customer Inquiry Workflow Copilot
 
 [![GitHub](https://img.shields.io/badge/GitHub-siliconsagenerd%2Fprozesspilot-181717?logo=github)](https://github.com/siliconsagenerd/prozesspilot)
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
@@ -13,7 +13,7 @@ Local-first AI workflow copilot for handling **synthetic German customer inquiri
 structured multi-step AI workflow, tool use, retrieval with citations, confidence-based human
 approval, full observability/audit trail, and evaluation.
 
-> Built as a portfolio project for EUROKEY Software GmbH (Saarbrücken) — Werkstudent
+> Built as a portfolio project for EUROKEY Software GmbH (Saarbrücken), Werkstudent
 > "Künstliche Intelligenz & LLM". All data is synthetic; no real email/CRM writes occur.
 
 ## Deutsch

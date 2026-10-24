@@ -28,7 +28,7 @@
 </div>
 {% if run.customer %}
 <div class="card">
-  <strong>Kunde:</strong> {{ run.customer.name }} ({{ run.customer.tier }}) — {{ run.customer.email }}<br>
+  <strong>Kunde:</strong> {{ run.customer.name }} ({{ run.customer.tier }}) · {{ run.customer.email }}<br>
   <em>{{ run.customer.history }}</em>
 </div>
 {% endif %}

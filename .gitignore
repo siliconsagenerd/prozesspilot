@@ -14,3 +14,5 @@ data/evaluations/
 
 # Synthetic demo seed data is not committed; keep local copy.
 data/customers.json
+.env*
+.memory-symlink-target.bak
