@@ -1,10 +1,10 @@
 <template>
   <div class="app">
     <header class="topbar">
-      <div class="brand">
+      <router-link to="/" class="brand">
         <span class="brand-mark" aria-hidden="true"></span>
         <h1>ProzessPilot</h1>
-      </div>
+      </router-link>
       <div class="topbar-right">
         <nav>
           <router-link to="/" class="nav-link">{{ t('nav.landing') }}</router-link>
@@ -71,6 +71,7 @@ import { t, toggleLocale } from "./i18n";
     position: sticky; top: .75rem; z-index: 10;
   }
   .brand { display: flex; align-items: center; gap: .6rem; }
+  .brand:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: var(--radius-sm); }
   .brand-mark {
     width: 26px; height: 26px; border-radius: 7px;
     background: linear-gradient(135deg, #0071e3, #409cff);
