@@ -49,6 +49,13 @@ cd frontend && npm install && npm run dev
 
 ## English
 
+### Live demo
+- URL: https://prozesspilot.duckdns.org
+- Business problem: repetitive customer-service inquiries require classification, knowledge lookup, and draft replies; this project demonstrates a human-in-the-loop workflow that keeps drafts editable and routes uncertain or sensitive cases for approval.
+- Access requires credentials provided separately.
+- The public deployment serves the built frontend through Caddy with basic
+  authentication; API routes are reverse-proxied to the FastAPI backend.
+
 ## What this project covers
 
 | Concern | What ProzessPilot shows |
@@ -73,6 +80,34 @@ cd frontend && npm install && npm run dev
 
 Code paths: `src/prozesspilot/agents/runtime.py`, `src/prozesspilot/agents/drafter.py`,
 `src/prozesspilot/eval/runner.py`, `frontend/src/views`.
+
+## Model and evaluation notes
+- Live model: OpenRouter `openai/gpt-4o-mini` (`provider=openai`,
+  `OPENAI_BASE_URL=https://openrouter.ai/api/v1`).
+- Earlier evaluation route: OmniRoute OpenAI-compatible endpoint,
+  configured model `laya-v2/laya-v2`; provider-reported upstream identity
+  was `Beam-1.0-501B-A23B`. This identity is provider-reported only and was
+  not independently verified.
+- Classification confidence and draft confidence are stored separately:
+  `WorkflowRun.confidence` is classification confidence;
+  `Draft.confidence` is post-draft confidence. Routing uses classification
+  confidence.
+- Retrieved sources are knowledge-base matches; cited sources are the
+  subset explicitly marked in the draft. Retrieved sources are not
+  presented as explicit citations.
+- Automated checks verify expected source retrieval and routing; human
+  approval is still required before any simulated outbound action.
+
+## Screenshots
+Clean screenshots of the live synthetic-data UI are stored under
+`docs/demo/screenshots/`:
+
+- `inbox.png` - synthetic inquiry list.
+- `run-detail.png` - successful seeded run with full editable draft,
+  explicit `[Title]` citations, cited sources, classification/draft
+  confidence, routing state, and approval controls.
+- `eval.png` - Evaluation screen; historical runs used the earlier
+  evaluation route above, not the current live model.
 
 ## Architecture
 
@@ -168,6 +203,34 @@ curl -X POST http://127.0.0.1:8000/api/inquiries \
   -d '{"body":"Wo ist meine Bestellung?","channel":"form"}'
 ```
 
+## Deployment (Oracle Cloud)
+- A single Oracle Cloud VM runs the backend and serves the built frontend.
+- Caddy terminates HTTPS, enforces basic authentication, and reverse-proxies
+  `/api`, `/health`, and docs routes to Uvicorn on `127.0.0.1:8000`.
+- The backend runs from `/opt/prozesspilot` with `PYTHONPATH=/opt/prozesspilot/src`.
+- SQLite is used for the demo database; backups are local gzip files.
+- No credentials, tokens, SSH keys, infrastructure IDs, or customer data are
+  documented in this repository.
+
+## Cost controls and sending restrictions
+- Per-run cost cap: `cost_cap_usd_per_run` (default `0.50`).
+- Per-client rate limit: `rate_limit_per_minute` (default `30`).
+- Token limits: `max_tokens_per_call` (default `1024`) and
+  `max_workflow_tokens` (default `4000`).
+- Latency SLA: `latency_sla_seconds` (default `30.0`).
+- Outbound actions are mocked; no real email, CRM, payment, or customer
+  writes occur. Customer sending remains disabled/mock.
+- Human approval is required before any simulated outbound action.
+
+## Demo walkthrough
+1. Log in with the separately provided demo credentials.
+2. Open Inbox and inspect a synthetic inquiry.
+3. Open an existing run.
+4. Inspect the full draft, explicit `[Title]` citations, cited sources,
+   classification confidence, draft confidence, and routing state.
+5. Explain the human approval workflow: approve, edit and approve, or
+   reject with reason. Do not click approval or sending actions.
+
 ## Tests
 
 ```bash
@@ -191,7 +254,6 @@ npm run build
 - No API keys or infra details exposed.
 
 ## Known limitations
-
 - Retrieval is keyword/TF-IDF, not embedding-based (Chroma optional upgrade).
 - Evaluation set is small (12 cases); no statistical significance claimed.
 - LLM judge is not used as objective truth.
@@ -200,6 +262,9 @@ npm run build
 - Provider/model identity is provider-reported only.
 - Historical expected-routing conflicts remain unresolved.
 - No full 12-case rerun was performed against the final implementation.
+- Confidence values are heuristic routing signals, not calibrated probabilities.
+- Demo data is synthetic; there is no real order lookup.
+- Customer sending is disabled/mock.
 
 ## Acknowledgements
 
