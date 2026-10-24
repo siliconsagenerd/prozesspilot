@@ -24,6 +24,11 @@
         </transition>
       </router-view>
     </main>
+    <footer class="site-footer">
+      <span>Vishrut Pandey</span>
+      <a href="https://github.com/siliconsagenerd/prozesspilot" target="_blank" rel="noopener noreferrer">GitHub</a>
+      <span>SQL: SQLite / PostgreSQL via SQLAlchemy</span>
+    </footer>
   </div>
 </template>
 <script setup lang="ts">
@@ -55,6 +60,7 @@ import { t, toggleLocale } from "./i18n";
     line-height: 1.5;
   }
   .app { max-width: 1120px; margin: 0 auto; padding: 1.25rem 1.5rem 3rem; }
+  .site-footer { margin-top: 2rem; padding-top: 1rem; border-top: 1px solid var(--border); color: var(--text-2); font-size: .85rem; display: flex; gap: 1rem; flex-wrap: wrap; }
   .topbar {
     display: flex; justify-content: space-between; align-items: center;
     margin-bottom: 1.5rem; padding: .75rem 1rem;

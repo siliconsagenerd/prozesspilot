@@ -21,6 +21,7 @@
         <div class="meta-item"><span class="label">{{ t("demo.approvalState") }}</span><span>{{ data.state }} ({{ data.routing_decision }})</span></div>
       </div>
 
+      <p class="policy-note">{{ t("demo.policyNote") }}</p>
       <div class="card">
         <div class="card-head">{{ t("demo.draft") }}</div>
         <pre>{{ data.draft }}</pre>
