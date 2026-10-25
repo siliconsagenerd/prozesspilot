@@ -22,6 +22,9 @@ class AnthropicProvider:
     ) -> LLMResult:
         if not self.api_key:
             raise RuntimeError("ANTHROPIC_API_KEY not set")
+        if json_mode:
+            json_instruction = "Return ONLY valid JSON. Do not include markdown code fences or any conversational text."
+            system = f"{system}\n\n{json_instruction}".strip() if system else json_instruction
         payload = {
             "model": self.model,
             "max_tokens": max_tokens or 1024,
@@ -30,7 +33,7 @@ class AnthropicProvider:
         if system:
             payload["system"] = system
         t0 = time.time()
-        async with httpx.AsyncClient(timeout=60) as c:
+        async with httpx.AsyncClient(timeout=settings.latency_sla_seconds) as c:
             r = await c.post(
                 "https://api.anthropic.com/v1/messages",
                 headers={

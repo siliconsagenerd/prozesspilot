@@ -11,6 +11,11 @@ from prozesspilot.config import settings
 async def send_email_mock(to: str, subject: str, body: str, run_id: str) -> dict:
     settings.mock_email_dir.mkdir(parents=True, exist_ok=True)
     fn = settings.mock_email_dir / f"{run_id}.json"
+    if fn.exists():
+        counter = 1
+        while (settings.mock_email_dir / f"{run_id}_{counter}.json").exists():
+            counter += 1
+        fn = settings.mock_email_dir / f"{run_id}_{counter}.json"
     record = {"to": to, "subject": subject, "body": body, "sent_at": time.time(), "mock": True}
     fn.write_text(json.dumps(record, ensure_ascii=False, indent=2), encoding="utf-8")
     return {"mock": True, "path": str(fn), "to": to}

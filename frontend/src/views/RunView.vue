@@ -90,11 +90,11 @@
           <span class="panel-label">{{ t('run.approval') }}</span>
         </div>
         <textarea v-model="edited" rows="6" class="compose-input"></textarea>
-        <input v-model="reason" :placeholder="t('run.rejectReason')" class="compose-input" />
+        <input v-model="reason" :placeholder="t('run.rejectReason')" class="compose-input" required />
         <div class="approval-actions">
           <button class="btn-approve" @click="act('approve')" :disabled="acting">{{ t('run.approve') }}</button>
           <button class="btn-edit" @click="act('edit_approve')" :disabled="acting">{{ t('run.editApprove') }}</button>
-          <button class="btn-reject" @click="act('reject')" :disabled="acting">{{ t('run.reject') }}</button>
+          <button class="btn-reject" @click="act('reject')" :disabled="acting || !reason.trim()">{{ t('run.reject') }}</button>
         </div>
       </div>
 

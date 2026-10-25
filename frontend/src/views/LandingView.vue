@@ -317,7 +317,7 @@ import { t } from "../i18n";
 }
 
 .doc-title {
-  font-family: var(--font-sans);
+  font-family: var(--font-display);
   font-size: clamp(2.5rem, 5vw, 3.5rem);
   font-weight: 800;
   letter-spacing: -0.035em;

@@ -92,7 +92,7 @@ async function requestJson<T>(url: string, init?: RequestInit): Promise<T> {
 function extractSafeDetail(text: string, contentType: string): string {
   if (!contentType.toLowerCase().includes("application/json") || text.trim() === "") {
     const plain = text.replace(/\s+/g, " ").trim();
-    return plain.length > 160 ? `${plain.slice(0, 160)}…` : plain;
+    return plain.length > 500 ? `${plain.slice(0, 500)}…` : plain;
   }
 
   try {
@@ -100,7 +100,7 @@ function extractSafeDetail(text: string, contentType: string): string {
     const detail = (data as { detail?: unknown })?.detail;
     if (typeof detail === "string") {
       const clean = detail.replace(/[\r\n\t]+/g, " ").trim();
-      return clean.length > 160 ? `${clean.slice(0, 160)}…` : clean;
+      return clean.length > 500 ? `${clean.slice(0, 500)}…` : clean;
     }
     if (Array.isArray(detail)) {
       const messages = detail
@@ -116,12 +116,12 @@ function extractSafeDetail(text: string, contentType: string): string {
         })
         .filter(Boolean)
         .join("; ");
-      return messages.length > 160 ? `${messages.slice(0, 160)}…` : messages;
+      return messages.length > 500 ? `${messages.slice(0, 500)}…` : messages;
     }
   } catch {
     // Fall through to the plain-text handling below.
   }
 
   const plain = text.replace(/\s+/g, " ").trim();
-  return plain.length > 160 ? `${plain.slice(0, 160)}…` : plain;
+  return plain.length > 500 ? `${plain.slice(0, 500)}…` : plain;
 }

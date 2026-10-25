@@ -33,7 +33,7 @@ class OllamaProvider:
         if json_mode:
             payload["format"] = "json"
         t0 = time.time()
-        async with httpx.AsyncClient(timeout=120) as c:
+        async with httpx.AsyncClient(timeout=settings.latency_sla_seconds) as c:
             r = await c.post(f"{self.base_url}/api/generate", json=payload)
             r.raise_for_status()
             data = r.json()

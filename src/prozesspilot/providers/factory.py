@@ -28,9 +28,10 @@ def provider_chain() -> list:
     Only uses explicitly configured settings.provider and, if non-empty,
     settings.fallback_provider. No silent or automatic fallback to Ollama.
     """
-    chain = [get_provider(settings.provider)]
+    primary = settings.provider
+    chain = [get_provider(primary)]
     fb = (settings.fallback_provider or "").strip()
-    if fb:
+    if fb and fb != primary:
         chain.append(get_provider(fb))
     return chain
 

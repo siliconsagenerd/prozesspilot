@@ -60,6 +60,7 @@ async def run_eval(
     classify_max_tokens: int | None = None,
     draft_max_tokens: int | None = None,
 ) -> dict:
+    original_provider = settings.provider
     if provider_override:
         settings.provider = provider_override  # type: ignore
     preflight_evaluation(
@@ -177,7 +178,11 @@ async def run_eval(
 
                 from prozesspilot.db.models import WorkflowStep as _WS
                 steps = s.execute(select(_WS).where(_WS.run_id == run_id)).scalars().all()
-                if steps:
+                llm_step = next((st for st in steps if st.name in ("classify", "draft") and st.model_provider), None)
+                if llm_step:
+                    row.model_provider = llm_step.model_provider or row.model_provider
+                    row.model_name = llm_step.model_name or row.model_name
+                elif steps:
                     row.model_provider = steps[0].model_provider or row.model_provider
                     row.model_name = steps[0].model_name or row.model_name
 
@@ -232,7 +237,10 @@ async def run_eval(
                 }
                 return result
 
-    results = list(await asyncio.gather(*(_run_one(case) for case in selected_cases)))
+    try:
+        results = list(await asyncio.gather(*(_run_one(case) for case in selected_cases)))
+    finally:
+        settings.provider = original_provider  # type: ignore
 
     # aggregate
     n = len(results)

@@ -28,7 +28,7 @@ class OpenAIProvider:
             messages.append({"role": "system", "content": system})
         messages.append({"role": "user", "content": prompt})
         payload = {"model": self.model, "messages": messages, "temperature": 0.2}
-        if max_tokens:
+        if max_tokens is not None:
             payload["max_tokens"] = max_tokens
         if json_mode:
             payload["response_format"] = {"type": "json_object"}

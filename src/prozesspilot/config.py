@@ -64,6 +64,12 @@ class Settings(BaseSettings):
         self.data_dir.mkdir(parents=True, exist_ok=True)
         self.mock_email_dir.mkdir(parents=True, exist_ok=True)
 
+    def validate_provider_keys(self) -> None:
+        if self.provider == "openai" and not self.openai_api_key:
+            raise ValueError("OPENAI_API_KEY required when provider is 'openai'")
+        if self.provider == "anthropic" and not self.anthropic_api_key:
+            raise ValueError("ANTHROPIC_API_KEY required when provider is 'anthropic'")
+
 
 settings = Settings()
 settings.ensure_dirs()
