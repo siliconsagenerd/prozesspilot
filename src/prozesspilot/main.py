@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import time
 from collections import defaultdict, deque
+from contextlib import asynccontextmanager
 
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
@@ -25,7 +26,13 @@ from prozesspilot.db.models import (
 from prozesspilot.db.session import db_session
 from prozesspilot.observability.audit import audit
 
-app = FastAPI(title="ProzessPilot")
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    settings.ensure_dirs()
+    yield
+
+app = FastAPI(title="ProzessPilot", lifespan=lifespan)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[
@@ -56,6 +63,17 @@ async def security_headers(request: Request, call_next):
         response.headers["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains"
     return response
 
+_rate_buckets = defaultdict(deque)
+
+def _rate_limit(key: str):
+    now = time.time()
+    q = _rate_buckets[key]
+    while q and now - q[0] > 60:
+        q.popleft()
+    if len(q) >= settings.rate_limit_per_minute:
+        raise HTTPException(429, "rate limit exceeded")
+    q.append(now)
+
 TEMPLATES = Environment(
     loader=FileSystemLoader(str(settings.data_dir.parent / "src" / "prozesspilot" / "templates")),
     autoescape=True,
@@ -74,10 +92,6 @@ class ApprovalIn(BaseModel):
     edited_text: str | None = None
     reason: str | None = None
 
-
-@app.on_event("startup")
-def startup():
-    settings.ensure_dirs()
 
 
 @app.get("/health")
@@ -103,17 +117,6 @@ def list_customers():
         return [{"id": c.id, "name": c.name, "email": c.email, "tier": c.tier} for c in cs]
 
 
-_rate_buckets = defaultdict(deque)
-
-def _rate_limit(key: str):
-    now = time.time()
-    q = _rate_buckets[key]
-    while q and now - q[0] > 60:
-        q.popleft()
-    if len(q) >= settings.rate_limit_per_minute:
-        raise HTTPException(429, "rate limit exceeded")
-    q.append(now)
-
 # Inquiries
 @app.post("/api/inquiries")
 async def create_inquiry(payload: InquiryIn, request: Request):
@@ -138,14 +141,13 @@ async def create_inquiry(payload: InquiryIn, request: Request):
 def list_inquiries():
     with db_session() as s:
         inqs = s.execute(select(Inquiry).order_by(Inquiry.created_at.desc())).scalars().all()
+        runs = s.execute(select(WorkflowRun).order_by(WorkflowRun.started_at.desc())).scalars().all()
+        latest_by_inquiry = {}
+        for r in runs:
+            latest_by_inquiry.setdefault(r.inquiry_id, r)
         out = []
         for i in inqs:
-            # latest run
-            run = s.execute(
-                select(WorkflowRun)
-                .where(WorkflowRun.inquiry_id == i.id)
-                .order_by(WorkflowRun.started_at.desc())
-            ).scalars().first()
+            run = latest_by_inquiry.get(i.id)
             out.append(
                 {
                     "id": i.id,

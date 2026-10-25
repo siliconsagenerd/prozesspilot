@@ -51,8 +51,7 @@ def _completion_status(finish_reason, text):
     if not stripped:
         return "unknown"
     ends_badly = stripped.endswith((",", ":", ";", "(", "[", "{"))
-    lower_tail = stripped[-1].islower() and not stripped.endswith(("kb]", "]"))
-    if ends_badly or lower_tail:
+    if ends_badly:
         return "heuristic_incomplete"
     return "unknown" if finish_reason is None else "provider_reported"
 
@@ -100,7 +99,6 @@ async def run_workflow(
         with db_session() as s:
             inq = s.get(Inquiry, inquiry_id)
             inq_body = inq.body
-            inq.subject = inq.subject
         cls_result = await classify_inquiry(
             inq_body or "",
             prompt_variant=prompt_variant,
@@ -268,6 +266,16 @@ async def run_workflow(
         _fail_run(run_id, str(e))
         return run_id
 
+    # Budget guard (cumulative classify + draft)
+    total_tokens = (
+        (cls_result.get("tokens_in", 0) or 0) + (cls_result.get("tokens_out", 0) or 0)
+        + (draft_res.get("tokens_in", 0) or 0) + (draft_res.get("tokens_out", 0) or 0)
+    )
+    total_cost = (cls_result.get("cost_usd", 0.0) or 0.0) + (draft_res.get("cost_usd", 0.0) or 0.0)
+    if total_tokens >= settings.max_workflow_tokens or total_cost >= settings.cost_cap_usd_per_run:
+        _fail_run(run_id, "workflow budget exceeded")
+        return run_id
+
     # Persist draft
     kb_citation_sources = [{"id": r["id"], "source_key": r.get("source_key"), "title": r["title"]} for r in kb_results]
     cited_sources, citation_issues = extract_explicit_citations(draft_text, kb_citation_sources)
@@ -416,7 +424,7 @@ async def approve_run(
 
     # approve or edit_approve -> simulate outbound (mock)
     final_text = edited_text if (action == "edit_approve" and edited_text) else None
-    to_email = "unknown@example.com"
+    to_email = None
     cust_id = None
     with db_session() as s:
         d = s.execute(select(Draft).where(Draft.run_id == run_id)).scalar_one_or_none()
@@ -427,7 +435,8 @@ async def approve_run(
             to_email = inq.customer.email
             cust_id = inq.customer.id
 
-    await registry.call("send_email_mock", to=to_email, subject="Re: Ihre Anfrage", body=final_text, run_id=run_id)
+    if to_email:
+        await registry.call("send_email_mock", to=to_email, subject="Re: Ihre Anfrage", body=final_text, run_id=run_id)
     await registry.call("crm_update_mock", run_id=run_id, customer_id=cust_id, summary=final_text[:200])
 
     with db_session() as s:
@@ -437,4 +446,9 @@ async def approve_run(
         inq = s.get(Inquiry, r.inquiry_id)
         if inq:
             inq.status = "Approved"
-    audit(run_id, "approved_and_mock_sent", actor=actor, payload={"mock": True})
+    audit(
+        run_id,
+        "approved_and_mock_sent",
+        actor=actor,
+        payload={"mock": True, "email_sent": bool(to_email), "to": to_email},
+    )
