@@ -60,6 +60,10 @@ async def run_eval(
     classify_max_tokens: int | None = None,
     draft_max_tokens: int | None = None,
 ) -> dict:
+    if draft_max_tokens is None:
+        draft_max_tokens = 512
+    if classify_max_tokens is None:
+        classify_max_tokens = 128
     original_provider = settings.provider
     if provider_override:
         settings.provider = provider_override  # type: ignore
@@ -80,7 +84,8 @@ async def run_eval(
         if "acceptable_sources" not in case or not isinstance(case["acceptable_sources"], list):
             raise ValueError(f"case {case.get('id')} missing list acceptable_sources")
 
-    semaphore = asyncio.Semaphore(3)
+    # Concurrency limit: 8 parallel runs for high throughput while staying safe
+    semaphore = asyncio.Semaphore(8)
 
     async def _run_one(case: dict) -> dict:
         async with semaphore:
