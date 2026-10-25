@@ -82,7 +82,7 @@ Code paths: `src/prozesspilot/agents/runtime.py`, `src/prozesspilot/agents/draft
 `src/prozesspilot/eval/runner.py`, `frontend/src/views`.
 
 ## Model and evaluation notes
-- Live model: OpenRouter `openai/gpt-4o-mini` (`provider=openai`,
+- Live model: Laya `laya-v3` (`provider=openai`,
   `OPENAI_BASE_URL=https://openrouter.ai/api/v1`).
 - Earlier evaluation route: OmniRoute OpenAI-compatible endpoint,
   configured model `laya-v2/laya-v2`; provider-reported upstream identity
