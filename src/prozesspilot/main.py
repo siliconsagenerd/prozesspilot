@@ -268,13 +268,16 @@ async def approve(run_id: str, payload: ApprovalIn):
         raise HTTPException(400, "bad action")
     if payload.action == "reject" and not payload.reason:
         raise HTTPException(400, "reason required")
-    await approve_run(
-        run_id,
-        payload.action,
-        edited_text=payload.edited_text,
-        reason=payload.reason,
-        actor="operator",
-    )
+    try:
+        await approve_run(
+            run_id,
+            payload.action,
+            edited_text=payload.edited_text,
+            reason=payload.reason,
+            actor="operator",
+        )
+    except ValueError as e:
+        raise HTTPException(409, str(e)) from e
     return {"ok": True}
 
 
