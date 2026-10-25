@@ -68,128 +68,127 @@ async def run_eval(
         {prompt_variant: prompt_variant},
         {"max_tokens_per_call": settings.max_tokens_per_call},
     )
-    results = []
     selected_cases = CASES
     if case_ids is not None:
         wanted = set(case_ids)
         selected_cases = [case for case in CASES if case["id"] in wanted]
+
     for case in selected_cases:
-        # Validate case contract strictly
         if "deliberate_abstention" not in case or not isinstance(case["deliberate_abstention"], bool):
             raise ValueError(f"case {case.get('id')} missing boolean deliberate_abstention")
         if "acceptable_sources" not in case or not isinstance(case["acceptable_sources"], list):
             raise ValueError(f"case {case.get('id')} missing list acceptable_sources")
 
-        # create inquiry
-        with db_session() as s:
-            inq = Inquiry(subject="", body=case["body"], channel="eval")
-            # link customer if email present
-            if case.get("customer_email"):
-                from prozesspilot.db.models import Customer
-                c = s.execute(select(Customer).where(Customer.email == case["customer_email"])).scalar_one_or_none()
-                if c:
-                    inq.customer_id = c.id
-            s.add(inq)
-            s.flush()
-            inq_id = inq.id
+    semaphore = asyncio.Semaphore(3)
 
-        run_id = await run_workflow(
-            inq_id,
-            prompt_variant=prompt_variant,
-            classify_max_tokens=classify_max_tokens,
-            draft_max_tokens=draft_max_tokens,
-        )
+    async def _run_one(case: dict) -> dict:
+        async with semaphore:
+            with db_session() as s:
+                inq = Inquiry(subject="", body=case["body"], channel="eval")
+                if case.get("customer_email"):
+                    from prozesspilot.db.models import Customer
+                    c = s.execute(select(Customer).where(Customer.email == case["customer_email"])).scalar_one_or_none()
+                    if c:
+                        inq.customer_id = c.id
+                s.add(inq)
+                s.flush()
+                inq_id = inq.id
 
-        # gather inside db_session to avoid detached instance attribute errors
-        with db_session() as s:
-            r = s.get(WorkflowRun, run_id)
-            predicted = r.classification
-            routing = r.routing_decision
-            expected_routing = (
-                "requires_human_approval"
-                if case["expected_routing"] == "requires_human_approval"
-                else "ready_for_review"
-            )
-
-            from prozesspilot.db.models import Draft, WorkflowStep
-            from prozesspilot.eval.citations import extract_explicit_citations
-            from prozesspilot.eval.export import _retrieved_sources
-            d = s.execute(select(Draft).where(Draft.run_id == run_id)).scalar_one_or_none()
-            steps_for_retrieval = s.execute(select(WorkflowStep).where(WorkflowStep.run_id == run_id)).scalars().all()
-            retrieved_sources = _retrieved_sources(list(steps_for_retrieval))
-            # Backfill explicit citations for older rows if needed.
-            if d is not None and not d.cited_sources and d.original_text:
-                cited, issues = extract_explicit_citations(d.original_text, retrieved_sources)
-                d.cited_sources = cited
-                d.citation_format_issues = issues
-            explicit_citations = list(d.cited_sources) if d is not None and d.cited_sources else []
-            citations_present = bool(explicit_citations)
-            draft_step = next((st for st in steps_for_retrieval if getattr(st, "name", None) == "draft"), None)
-            completion_status = getattr(draft_step, "completion_status", None) if draft_step is not None else None
-            execution_complete = r.state in ("ReadyForReview", "AwaitingApproval")
-            citation_keys = [
-                c.get("source_key") or c.get("title")
-                for c in explicit_citations
-                if isinstance(c, dict)
-            ]
-
-            deliberate_abstention = case["deliberate_abstention"]
-            abstention_correct = evaluate_abstention(deliberate_abstention, citations_present)
-            classification_confidence = float(r.confidence) if r.confidence is not None else 0.0
-            from prozesspilot.db.models import Customer as _Customer
-            inq_obj = s.get(Inquiry, r.inquiry_id)
-            cust_obj = s.get(_Customer, inq_obj.customer_id) if (inq_obj and inq_obj.customer_id) else None
-            customer_ctx = None
-            if cust_obj is not None:
-                customer_ctx = {
-                    "tier": cust_obj.tier,
-                    "has_open_complaint": bool(getattr(cust_obj, "has_open_complaint", False)),
-                }
-            from prozesspilot.agents.runtime import _route as _route_policy
-            policy_routing = _route_policy(predicted, classification_confidence, customer_ctx)
-            routing_policy_compliant = (routing == policy_routing["decision"])
-
-            acceptable_sources = case["acceptable_sources"]
-            sources_correct = evaluate_source_ids(acceptable_sources, citation_keys)
-
-            from prozesspilot.eval.export import extract_run_record
-            record = extract_run_record(run_id)
-
-            row = Evaluation(
-                case_id=case["id"],
+            run_id = await run_workflow(
+                inq_id,
                 prompt_variant=prompt_variant,
-                model_provider=settings.provider,
-                model_name=(
-                    settings.ollama_model
-                    if settings.provider == "ollama"
-                    else (settings.openai_model if settings.provider == "openai" else settings.anthropic_model)
-                ),
-                predicted_classification=predicted,
-                expected_classification=case["expected_classification"],
-                classification_correct=(predicted == case["expected_classification"]),
-                routing_correct=(routing == expected_routing),
-                citations_present=citations_present,
-                latency_ms=r.total_latency_ms,
-                tokens=r.total_tokens,
-                cost_usd=r.total_cost_usd,
+                classify_max_tokens=classify_max_tokens,
+                draft_max_tokens=draft_max_tokens,
             )
 
-            # fix provider/model from steps if available
-            from prozesspilot.db.models import WorkflowStep as _WS
-            steps = s.execute(select(_WS).where(_WS.run_id == run_id)).scalars().all()
-            if steps:
-                row.model_provider = steps[0].model_provider or row.model_provider
-                row.model_name = steps[0].model_name or row.model_name
+            with db_session() as s:
+                r = s.get(WorkflowRun, run_id)
+                predicted = r.classification
+                routing = r.routing_decision
+                expected_routing = (
+                    "requires_human_approval"
+                    if case["expected_routing"] == "requires_human_approval"
+                    else "ready_for_review"
+                )
 
-            row.notes = (
-                f"deliberate_abstention={deliberate_abstention}; abstention_correct={abstention_correct}; "
-                f"acceptable_sources={acceptable_sources}; sources_found={citation_keys}; "
-                f"sources_correct={sources_correct}"
-            )
-            s.add(row)
+                from prozesspilot.db.models import Draft, WorkflowStep
+                from prozesspilot.eval.citations import extract_explicit_citations
+                from prozesspilot.eval.export import _retrieved_sources
+                d = s.execute(select(Draft).where(Draft.run_id == run_id)).scalar_one_or_none()
+                steps_for_retrieval = s.execute(
+                    select(WorkflowStep).where(WorkflowStep.run_id == run_id)
+                ).scalars().all()
+                retrieved_sources = _retrieved_sources(list(steps_for_retrieval))
+                if d is not None and not d.cited_sources and d.original_text:
+                    cited, issues = extract_explicit_citations(d.original_text, retrieved_sources)
+                    d.cited_sources = cited
+                    d.citation_format_issues = issues
+                explicit_citations = list(d.cited_sources) if d is not None and d.cited_sources else []
+                citations_present = bool(explicit_citations)
+                draft_step = next((st for st in steps_for_retrieval if getattr(st, "name", None) == "draft"), None)
+                completion_status = getattr(draft_step, "completion_status", None) if draft_step is not None else None
+                execution_complete = r.state in ("ReadyForReview", "AwaitingApproval")
+                citation_keys = [
+                    c.get("source_key") or c.get("title")
+                    for c in explicit_citations
+                    if isinstance(c, dict)
+                ]
 
-            results.append(
-                {
+                deliberate_abstention = case["deliberate_abstention"]
+                abstention_correct = evaluate_abstention(deliberate_abstention, citations_present)
+                classification_confidence = float(r.confidence) if r.confidence is not None else 0.0
+                from prozesspilot.db.models import Customer as _Customer
+                inq_obj = s.get(Inquiry, r.inquiry_id)
+                cust_obj = s.get(_Customer, inq_obj.customer_id) if (inq_obj and inq_obj.customer_id) else None
+                customer_ctx = None
+                if cust_obj is not None:
+                    customer_ctx = {
+                        "tier": cust_obj.tier,
+                        "has_open_complaint": bool(getattr(cust_obj, "has_open_complaint", False)),
+                    }
+                from prozesspilot.agents.runtime import _route as _route_policy
+                policy_routing = _route_policy(predicted, classification_confidence, customer_ctx)
+                routing_policy_compliant = (routing == policy_routing["decision"])
+
+                acceptable_sources = case["acceptable_sources"]
+                sources_correct = evaluate_source_ids(acceptable_sources, citation_keys)
+
+                from prozesspilot.eval.export import extract_run_record
+                record = extract_run_record(run_id)
+
+                row = Evaluation(
+                    case_id=case["id"],
+                    prompt_variant=prompt_variant,
+                    model_provider=settings.provider,
+                    model_name=(
+                        settings.ollama_model
+                        if settings.provider == "ollama"
+                        else (settings.openai_model if settings.provider == "openai" else settings.anthropic_model)
+                    ),
+                    predicted_classification=predicted,
+                    expected_classification=case["expected_classification"],
+                    classification_correct=(predicted == case["expected_classification"]),
+                    routing_correct=(routing == expected_routing),
+                    citations_present=citations_present,
+                    latency_ms=r.total_latency_ms,
+                    tokens=r.total_tokens,
+                    cost_usd=r.total_cost_usd,
+                )
+
+                from prozesspilot.db.models import WorkflowStep as _WS
+                steps = s.execute(select(_WS).where(_WS.run_id == run_id)).scalars().all()
+                if steps:
+                    row.model_provider = steps[0].model_provider or row.model_provider
+                    row.model_name = steps[0].model_name or row.model_name
+
+                row.notes = (
+                    f"deliberate_abstention={deliberate_abstention}; abstention_correct={abstention_correct}; "
+                    f"acceptable_sources={acceptable_sources}; sources_found={citation_keys}; "
+                    f"sources_correct={sources_correct}"
+                )
+                s.add(row)
+
+                result = {
                     "case_id": case["id"],
                     "predicted": predicted,
                     "expected": case["expected_classification"],
@@ -231,7 +230,9 @@ async def run_eval(
                     "cited_sources": record["cited_sources"],
                     "steps": record["steps"],
                 }
-            )
+                return result
+
+    results = list(await asyncio.gather(*(_run_one(case) for case in selected_cases)))
 
     # aggregate
     n = len(results)
