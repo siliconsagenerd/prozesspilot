@@ -44,6 +44,6 @@ def test_workflow_does_not_reach_approved_without_explicit_action():
     r2 = client.post(f"/api/inquiries/{iid}/run")
     run_id = r2.json()["run_id"]
 
-    run = client.get(f"/api/runs/{run_id}").json()
+    run = client.get(f"/api/runs/{run_id}", headers={"X-ProzessPilot-Operator": "1"}).json()
     assert run["state"] != "Approved"
     assert run["approvals"] == []

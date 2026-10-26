@@ -71,7 +71,7 @@ def test_budget_guard_blocks_run(monkeypatch):
     r2 = client.post(f"/api/inquiries/{iid}/run")
     run_id = r2.json()["run_id"]
 
-    run = client.get(f"/api/runs/{run_id}").json()
+    run = client.get(f"/api/runs/{run_id}", headers={"X-ProzessPilot-Operator": "1"}).json()
     assert run["state"] == "Failed"
 
     with db_session() as s:

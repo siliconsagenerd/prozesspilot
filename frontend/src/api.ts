@@ -25,7 +25,9 @@ export const API = {
   },
 
   async getRun(id: string) {
-    return requestJson<any>(`${this.base}/runs/${id}`);
+    return requestJson<any>(`${this.base}/runs/${id}`, {
+      headers: { "X-ProzessPilot-Operator": "1" },
+    });
   },
 
   async approve(runId: string, action: string, edited_text?: string, reason?: string) {

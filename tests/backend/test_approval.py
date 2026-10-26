@@ -38,7 +38,7 @@ def test_approval_flow():
     # approve
     r3 = client.post(f"/api/runs/{run_id}/approve", json={"action": "approve"})
     assert r3.status_code == 200
-    run = client.get(f"/api/runs/{run_id}").json()
+    run = client.get(f"/api/runs/{run_id}", headers={"X-ProzessPilot-Operator": "1"}).json()
     assert run["state"] == "Approved"
     assert len(run["approvals"]) == 1
 
@@ -58,7 +58,7 @@ def test_edit_preserves_original():
     r2 = client.post(f"/api/inquiries/{iid}/run")
     run_id = r2.json()["run_id"]
     client.post(f"/api/runs/{run_id}/approve", json={"action": "edit_approve", "edited_text": "edited reply"})
-    run = client.get(f"/api/runs/{run_id}").json()
+    run = client.get(f"/api/runs/{run_id}", headers={"X-ProzessPilot-Operator": "1"}).json()
     assert run["draft"]["original_text"] != "edited reply"
     assert run["draft"]["edited_text"] == "edited reply"
 
@@ -73,7 +73,7 @@ def test_high_confidence_does_not_auto_approve_or_send():
         r2 = client.post(f"/api/inquiries/{iid}/run")
         run_id = r2.json()["run_id"]
 
-    run = client.get(f"/api/runs/{run_id}").json()
+    run = client.get(f"/api/runs/{run_id}", headers={"X-ProzessPilot-Operator": "1"}).json()
     assert run["state"] == "ReadyForReview"
     assert run["approvals"] == []
     called = [c.args[0] for c in mock_call.call_args_list]
@@ -98,7 +98,7 @@ def test_ready_for_review_does_not_trigger_mock_send():
     from prozesspilot.db.session import db_session
 
     run_id = _run_id_for()
-    run = client.get(f"/api/runs/{run_id}").json()
+    run = client.get(f"/api/runs/{run_id}", headers={"X-ProzessPilot-Operator": "1"}).json()
     assert run["state"] == "ReadyForReview"
     assert run["requires_approval"] is False
     assert run["approvals"] == []
@@ -125,7 +125,7 @@ def test_explicit_approval_records_approval_and_mock_send():
     r = client.post(f"/api/runs/{run_id}/approve", json={"action": "approve"})
     assert r.status_code == 200
 
-    run = client.get(f"/api/runs/{run_id}").json()
+    run = client.get(f"/api/runs/{run_id}", headers={"X-ProzessPilot-Operator": "1"}).json()
     assert run["state"] == "Approved"
     assert len(run["approvals"]) == 1
     assert (settings.mock_email_dir / f"{run_id}.json").exists()
@@ -168,7 +168,7 @@ def test_repeated_approval_does_not_duplicate_mock_outbound():
     second = client.post(f"/api/runs/{run_id}/approve", json={"action": "approve"})
     assert second.status_code == 200
 
-    run = client.get(f"/api/runs/{run_id}").json()
+    run = client.get(f"/api/runs/{run_id}", headers={"X-ProzessPilot-Operator": "1"}).json()
     assert run["state"] == "Approved"
     assert len(run["approvals"]) == 1
     assert email_file.stat().st_mtime == mtime

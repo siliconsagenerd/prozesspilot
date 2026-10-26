@@ -2,10 +2,56 @@
 
 from __future__ import annotations
 
+import hashlib
+import json
+
+from sqlalchemy import event, select
+
 from prozesspilot.db.models import AuditEvent
+from prozesspilot.db.models import now as _now
 from prozesspilot.db.session import db_session
+
+
+def _hash_event(row: AuditEvent) -> str:
+    created = row.created_at.isoformat() if row.created_at is not None else ""
+    payload = {
+        "id": row.id,
+        "run_id": row.run_id,
+        "event_type": row.event_type,
+        "actor": row.actor,
+        "payload": row.payload or {},
+        "created_at": created,
+        "prev_hash": row.prev_hash,
+    }
+    return hashlib.sha256(json.dumps(payload, sort_keys=True, default=str).encode()).hexdigest()
 
 
 def audit(run_id: str | None, event_type: str, actor: str = "system", payload: dict | None = None) -> None:
     with db_session() as s:
-        s.add(AuditEvent(run_id=run_id, event_type=event_type, actor=actor, payload=payload or {}))
+        prev_hash = s.execute(
+            select(AuditEvent.event_hash)
+            .where(AuditEvent.run_id == run_id)
+            .order_by(AuditEvent.created_at.desc(), AuditEvent.id.desc())
+            .limit(1)
+        ).scalar_one_or_none() or ("0" * 64)
+        row = AuditEvent(
+            run_id=run_id,
+            event_type=event_type,
+            actor=actor,
+            payload=payload or {},
+            prev_hash=prev_hash,
+            created_at=_now(),
+        )
+        row.event_hash = _hash_event(row)
+        s.add(row)
+        s.flush()
+
+
+@event.listens_for(AuditEvent, "before_update")
+def _reject_audit_update(mapper, connection, target):
+    raise ValueError("AuditEvent rows are immutable")
+
+
+@event.listens_for(AuditEvent, "before_delete")
+def _reject_audit_delete(mapper, connection, target):
+    raise ValueError("AuditEvent rows are immutable")

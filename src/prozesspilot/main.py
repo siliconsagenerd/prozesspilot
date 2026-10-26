@@ -23,7 +23,7 @@ from prozesspilot.db.models import (
     WorkflowRun,
     WorkflowStep,
 )
-from prozesspilot.db.session import db_session
+from prozesspilot.db.session import db_session, migrate_db
 from prozesspilot.observability.audit import audit
 
 
@@ -31,6 +31,7 @@ from prozesspilot.observability.audit import audit
 async def lifespan(app: FastAPI):
     settings.ensure_dirs()
     settings.validate_provider_keys()
+    migrate_db()
     yield
 
 app = FastAPI(title="ProzessPilot", lifespan=lifespan)
@@ -38,9 +39,11 @@ app.add_middleware(
     CORSMiddleware,
     allow_origins=[
         "https://prozesspilot.duckdns.org",
+        "https://prozesspilot-editorial.vercel.app",
         "http://localhost:5173",
         "http://127.0.0.1:5173",
     ],
+    allow_origin_regex=r"https://.*\.vercel\.app",
     allow_methods=["GET", "POST", "OPTIONS"],
     allow_headers=["Content-Type", "X-ProzessPilot-Operator"],
 )
@@ -190,7 +193,13 @@ async def run(
 
 # Workflow runs
 @app.get("/api/runs/{run_id}")
-def get_run(run_id: str):
+def get_run(run_id: str, request: Request):
+    if request.headers.get("x-prozesspilot-operator") != "1":
+        raise HTTPException(401, "operator authentication required")
+    return _fetch_run(run_id)
+
+
+def _fetch_run(run_id: str):
     with db_session() as s:
         r = s.get(WorkflowRun, run_id)
         if not r:
@@ -291,8 +300,10 @@ async def approve(run_id: str, payload: ApprovalIn):
 
 
 @app.get("/api/runs/{run_id}/trace.html", response_class=HTMLResponse)
-def trace_html(run_id: str):
-    data = get_run(run_id)
+def trace_html(run_id: str, request: Request):
+    if request.headers.get("x-prozesspilot-operator") != "1":
+        raise HTTPException(401, "operator authentication required")
+    data = _fetch_run(run_id)
     tmpl = TEMPLATES.get_template("trace.html")
     return tmpl.render(run=data)
 

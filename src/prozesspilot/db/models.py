@@ -146,6 +146,8 @@ class AuditEvent(Base):
     actor: Mapped[str] = mapped_column(String(120), default="system")
     payload: Mapped[dict | None] = mapped_column(JSON, nullable=True)
     created_at: Mapped[dt.datetime] = mapped_column(DateTime(timezone=True), default=now)
+    prev_hash: Mapped[str | None] = mapped_column(String(64), nullable=True)
+    event_hash: Mapped[str | None] = mapped_column(String(64), nullable=True)
 
 
 class Evaluation(Base):

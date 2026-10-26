@@ -49,7 +49,7 @@ def test_provider_length_stop_is_captured_and_full_draft_preserved():
     r2 = client.post(f"/api/inquiries/{iid}/run")
     assert r2.status_code == 200
     run_id = r2.json()["run_id"]
-    run = client.get(f"/api/runs/{run_id}").json()
+    run = client.get(f"/api/runs/{run_id}", headers={"X-ProzessPilot-Operator": "1"}).json()
     draft_step = [s for s in run["steps"] if s["name"] == "draft"][0]
     assert draft_step["finish_reason"] == "length"
     assert draft_step["completion_status"] == "length_stopped"
@@ -80,7 +80,7 @@ def test_unknown_status_when_no_finish_reason():
         r = client.post("/api/inquiries", json={"body": "Frage?", "customer_email": "anna@example.de"})
         iid = r.json()["id"]
         r2 = client.post(f"/api/inquiries/{iid}/run")
-        run = client.get(f"/api/runs/{r2.json()['run_id']}").json()
+        run = client.get(f"/api/runs/{r2.json()['run_id']}", headers={"X-ProzessPilot-Operator": "1"}).json()
         draft_step = [s for s in run["steps"] if s["name"] == "draft"][0]
         assert draft_step["finish_reason"] is None
         assert draft_step["completion_status"] == "unknown"
