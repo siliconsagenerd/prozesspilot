@@ -65,9 +65,9 @@
               <td class="mono">{{ r.case_id }}</td>
               <td>{{ r.predicted }}</td>
               <td>{{ r.expected }}</td>
-              <td :class="r.classification_correct ? 'ok' : 'bad'">{{ r.classification_correct ? 'OK' : '–' }}</td>
-              <td :class="r.routing_correct ? 'ok' : 'bad'">{{ r.routing_correct ? 'OK' : '–' }}</td>
-              <td :class="r.citations_present ? 'ok' : 'bad'">{{ r.citations_present ? 'OK' : '–' }}</td>
+              <td :class="r.classification_correct ? 'ok' : 'bad'">{{ r.classification_correct ? t('eval.ok') : '–' }}</td>
+              <td :class="r.routing_correct ? 'ok' : 'bad'">{{ r.routing_correct ? t('eval.ok') : '–' }}</td>
+              <td :class="r.citations_present ? 'ok' : 'bad'">{{ r.citations_present ? t('eval.ok') : '–' }}</td>
             </tr>
           </tbody>
         </table>

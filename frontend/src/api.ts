@@ -47,6 +47,10 @@ export const API = {
   async evalResults() {
     return requestJson<any>(`${this.base}/eval/results`);
   },
+
+  async listCustomers() {
+    return requestJson<any[]>(`${this.base}/customers`);
+  },
 };
 
 class ApiError extends Error {

@@ -2,7 +2,7 @@
   <div class="inbox-view">
     <div class="page-head">
       <div>
-        <div class="eyebrow">Operator Console</div>
+        <div class="eyebrow">{{ t("inbox.console") }}</div>
         <h2>{{ t("inbox.title") }}</h2>
       </div>
       <span class="chip-count">{{ inquiries.length }} {{ t("inbox.entries") }}</span>
@@ -40,10 +40,13 @@
       </div>
       <div v-else class="inbox-list">
         <div v-for="i in inquiries" :key="i.id" class="inbox-row">
-          <span class="badge" :class="statusClass(i.status)">{{ i.status }}</span>
-          <span class="preview">{{ i.body }}</span>
+          <span class="badge" :class="statusClass(i.status)">{{ lookup("status", i.status) }}</span>
+          <div class="inquiry-content">
+            <span class="inquiry-subject">{{ i.subject || t('inbox.noSubject') }}</span>
+            <span class="preview">{{ i.body }}</span>
+          </div>
           <router-link v-if="i.run_id" :to="`/runs/${i.run_id}`" class="open-link">
-            {{ t("inbox.open") }} →
+            {{ t("inbox.open") }}
           </router-link>
           <span v-else class="no-run">-</span>
         </div>
@@ -55,7 +58,7 @@
 <script setup lang="ts">
 import { ref, onMounted } from "vue";
 import { API } from "../api";
-import { t } from "../i18n";
+import { t, lookup } from "../i18n";
 
 const body = ref("");
 const email = ref("");
@@ -176,7 +179,14 @@ onMounted(load);
   transition: var(--transition);
 }
 .inbox-row:hover { border-color: var(--border-active); background: var(--surface-hover); }
-.preview { color: var(--text); font-size: .9rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.inquiry-content {
+  display: flex; flex-direction: column; gap: 0.2rem; min-width: 0;
+}
+.inquiry-subject {
+  font-weight: 600; font-size: 0.88rem; color: var(--text);
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.preview { color: var(--text-muted); font-size: .85rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .no-run { color: var(--text-subtle); }
 
 .badge {

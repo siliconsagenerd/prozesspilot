@@ -2,7 +2,7 @@
   <div class="demo-view">
     <div class="page-head">
       <div>
-        <div class="eyebrow">Recorded Snapshot</div>
+        <div class="eyebrow">{{ t("demo.snapshot") }}</div>
         <h2>{{ t("demo.title") }}</h2>
       </div>
       <span class="chip-recorded">
@@ -15,11 +15,24 @@
     <p v-else-if="error" class="state error" role="alert">{{ error }}</p>
 
     <template v-else-if="data">
+      <div v-if="examples.length > 1" class="demo-selector" role="tablist">
+        <button
+          v-for="(ex, idx) in examples"
+          :key="idx"
+          type="button"
+          class="demo-tab-btn"
+          :class="{ active: selectedIndex === idx }"
+          @click="selectExample(idx)"
+        >
+          {{ ex?.inquiry?.customer_name || `${t('demo.inquiryLabel')} ${idx + 1}` }}
+        </button>
+      </div>
+
       <div class="demo-grid">
         <div class="panel panel-primary">
           <div class="panel-head">
             <span class="panel-label">{{ t("demo.inquiryLabel") }}</span>
-            <span class="panel-num">01</span>
+            <span class="panel-num">0{{ selectedIndex + 1 }}</span>
           </div>
           <h3 class="inquiry-subject">{{ data.inquiry?.subject }}</h3>
           <pre class="mono-block">{{ data.inquiry?.body }}</pre>
@@ -28,7 +41,7 @@
         <div class="side-stack">
           <div class="metric-tile">
             <span class="tile-label">{{ t("demo.classification") }}</span>
-            <span class="tile-value">{{ data.classification }}</span>
+            <span class="tile-value">{{ lookup('class', data.classification) }}</span>
           </div>
           <div class="metric-tile">
             <span class="tile-label">{{ t("run.confidence") }}</span>
@@ -36,7 +49,7 @@
           </div>
           <div class="metric-tile">
             <span class="tile-label">{{ t("demo.approvalState") }}</span>
-            <span class="tile-value">{{ data.state }} <span class="dim">· {{ data.routing_decision }}</span></span>
+            <span class="tile-value">{{ lookup('status', data.state) }} <span class="dim">· {{ lookup('routing', data.routing_decision) }}</span></span>
           </div>
         </div>
       </div>
@@ -92,16 +105,26 @@
 
 <script setup lang="ts">
 import { ref, onMounted } from "vue";
-import { t } from "../i18n";
+import { t, lookup } from "../i18n";
 import { API } from "../api";
 
 const data = ref<any>(null);
+const examples = ref<any[]>([]);
+const selectedIndex = ref(0);
 const error = ref("");
 const loading = ref(true);
 
+const selectExample = (idx: number) => {
+  selectedIndex.value = idx;
+  data.value = examples.value[idx];
+};
+
 onMounted(async () => {
   try {
-    data.value = await API.getDemoSnapshot();
+    const snapshot = await API.getDemoSnapshot();
+    examples.value = Array.isArray(snapshot) ? snapshot : [snapshot];
+    selectedIndex.value = 0;
+    data.value = examples.value[0];
   } catch {
     error.value = t("demo.error");
   } finally {
@@ -137,6 +160,37 @@ onMounted(async () => {
 .state { padding: 1.25rem; border-radius: var(--radius-md); }
 .state.muted { color: var(--text-muted); background: var(--surface-card); border: 1px solid var(--border); }
 .state.error { color: var(--danger); background: var(--danger-soft); border: 1px solid var(--danger); }
+
+.demo-selector {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  margin-bottom: 0.5rem;
+}
+
+.demo-tab-btn {
+  background: var(--surface-card);
+  border: 1px solid var(--border);
+  color: var(--text-muted);
+  padding: 0.45rem 0.9rem;
+  border-radius: var(--radius-sm, 6px);
+  font-size: 0.82rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.demo-tab-btn:hover {
+  border-color: var(--accent);
+  color: var(--text);
+}
+
+.demo-tab-btn.active {
+  background: var(--accent-soft);
+  border-color: var(--accent);
+  color: var(--accent);
+  font-weight: 600;
+}
 
 .demo-grid {
   display: grid; grid-template-columns: 1.6fr 1fr; gap: 1.5rem;

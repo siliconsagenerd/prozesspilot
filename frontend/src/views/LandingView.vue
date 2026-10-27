@@ -42,8 +42,8 @@
         <thead>
           <tr>
             <th>{{ t("landing.eval.metric") }}</th>
-            <th>Baseline</th>
-            <th>Improved</th>
+            <th>{{ t("landing.eval.baseline") }}</th>
+            <th>{{ t("landing.eval.improved") }}</th>
           </tr>
         </thead>
         <tbody>
@@ -68,7 +68,7 @@
         <li>{{ t("landing.eval.explicitCitations") }}</li>
       </ul>
       <div class="prov-block">
-        <div class="prov-block__label">Provenance</div>
+        <div class="prov-block__label">{{ t("landing.prov.label") }}</div>
         <p class="muted">{{ t("landing.eval.provenance") }}</p>
         <p class="muted prov-block__line">{{ t("landing.eval.historical") }}</p>
         <p class="muted prov-block__line">{{ t("landing.eval.current") }}</p>
@@ -145,16 +145,16 @@
         <hr class="rule" />
 
         <section class="doc-section eval-section">
-          <h2 class="section-h">4. Evaluation</h2>
+          <h2 class="section-h">{{ t("landing.section.eval") }}</h2>
           <p class="muted">{{ t("landing.eval.historicalMetrics") }}</p>
           <div class="table-wrap">
             <table>
               <thead>
                 <tr>
                   <th>{{ t("landing.eval.metric") }}</th>
-                  <th>Baseline</th>
+                  <th>{{ t("landing.eval.baseline") }}</th>
                   <th>ProzessPilot</th>
-                  <th>Delta</th>
+                  <th>{{ t("landing.eval.delta") }}</th>
                 </tr>
               </thead>
               <tbody>

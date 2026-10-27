@@ -4,17 +4,17 @@
     <div v-if="run" class="run-body">
       <div class="page-head">
         <div>
-          <div class="eyebrow">Workflow Trace</div>
+          <div class="eyebrow">{{ t("run.trace") }}</div>
           <h2>{{ t('run.workflow') }} <span class="mono-run-id">{{ run.id }}</span></h2>
         </div>
-        <span class="badge" :class="statusClass(run.state)">{{ run.state }}</span>
+        <span class="badge" :class="statusClass(run.state)">{{ lookup("status", run.state) }}</span>
 
       </div>
 
       <div class="metric-grid">
         <div class="metric-tile">
           <span class="tile-label">{{ t('run.classification') }}</span>
-          <span class="tile-value">{{ run.classification || "-" }}</span>
+          <span class="tile-value">{{ lookup("class", run.classification) }}</span>
         </div>
         <div class="metric-tile">
           <span class="tile-label">{{ t('run.confidence') }}</span>
@@ -22,7 +22,7 @@
         </div>
         <div class="metric-tile">
           <span class="tile-label">{{ t('run.routing') }}</span>
-          <span class="tile-value">{{ run.routing_decision || "-" }}</span>
+          <span class="tile-value">{{ lookup("routing", run.routing_decision) }}</span>
         </div>
         <div class="metric-tile">
           <span class="tile-label">{{ t('run.cost') }}</span>
@@ -40,7 +40,7 @@
         </div>
         <div class="customer-line">
           <strong>{{ run.customer.name }}</strong>
-          <span class="badge tier">{{ run.customer.tier }}</span>
+          <span class="badge tier">{{ lookup("tier", run.customer.tier) }}</span>
           <span class="customer-email">{{ run.customer.email }}</span>
         </div>
         <div class="history"><em>{{ run.customer.history }}</em></div>
@@ -58,7 +58,7 @@
         <div class="step-head">
           <span class="step-num">{{ st.index }}</span>
           <strong class="step-name">{{ st.name }}</strong>
-          <span class="badge" :class="statusClass(st.status)">{{ st.status }}</span>
+          <span class="badge" :class="statusClass(st.status)">{{ lookup("status", st.status) }}</span>
           <span v-if="st.model_provider" class="step-model mono">{{ st.model_provider }}/{{ st.model_name }}</span>
         </div>
         <div class="step-metrics mono">{{ t('run.latencyShort') }} {{ st.latency_ms }}ms · {{ t('run.costShort') }} {{ st.cost_usd }}</div>
@@ -114,7 +114,7 @@
 import { ref, onMounted } from "vue";
 import { useRoute } from "vue-router";
 import { API } from "../api";
-import { t } from "../i18n";
+import { t, lookup } from "../i18n";
 
 const route = useRoute();
 const run = ref<any>(null);

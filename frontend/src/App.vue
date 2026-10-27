@@ -67,8 +67,12 @@
 
     <footer class="site-footer">
       <div class="footer-inner">
-        <span>Vishrut Pandey · Bewerbungsprojekt · EUROKEY Software GmbH</span>
+        <span>{{ t("app.footer") }}</span>
         <span class="tech">FastAPI · Vue 3 · SQLite · OpenAI/Laya</span>
+        <span class="footer-links">
+          <a href="https://securedoc-frontend-production.up.railway.app/" target="_blank" rel="noopener">SecureDoc-AI ↗</a>
+          <a href="https://github.com/siliconsagenerd" target="_blank" rel="noopener">GitHub ↗</a>
+        </span>
       </div>
     </footer>
 
@@ -88,12 +92,12 @@
         <div class="float-widget__eyebrow">★ {{ t("landing.prov.related") }}</div>
         <h3 class="float-widget__title">SecureDoc-AI</h3>
         <a
-          href="https://github.com/siliconsagenerd/securedoc-ai"
+          href="https://securedoc-frontend-production.up.railway.app/"
           target="_blank"
           rel="noopener"
           class="float-widget__primary-link"
           @click.stop
-        >Open SecureDoc-AI ↗</a>
+        >{{ t("landing.portfolio.open") }}</a>
         <div class="float-widget__extra" v-show="floatExpanded || floatHovered">
           <p class="float-widget__desc">{{ t("landing.portfolio.body") }}</p>
           <div class="float-widget__chips">
@@ -104,11 +108,10 @@
             <span class="chip">Spring Boot</span>
           </div>
           <div class="float-widget__links">
-            <a href="https://github.com/siliconsagenerd/securedoc-ai" target="_blank" rel="noopener" class="float-widget__link" @click.stop>SecureDoc-AI ↗</a>
-            <a href="https://github.com/siliconsagenerd/prozesspilot" target="_blank" rel="noopener" class="float-widget__link" @click.stop>ProzessPilot ↗</a>
+            <a href="https://github.com/siliconsagenerd" target="_blank" rel="noopener" class="float-widget__link" @click.stop>GitHub ↗</a>
           </div>
         </div>
-        <div class="float-widget__hint" v-show="!(floatExpanded || floatHovered)">tap to expand</div>
+        <div class="float-widget__hint" v-show="!(floatExpanded || floatHovered)">{{ t("landing.portfolio.expand") }}</div>
       </div>
     </aside>
   </div>
