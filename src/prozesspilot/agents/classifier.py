@@ -34,20 +34,31 @@ async def classify_inquiry(text: str, prompt_variant: str = "improved", max_toke
     res = await complete_with_fallback(prompt, system=system, json_mode=True, max_tokens=max_tokens)
     try:
         data = json.loads(res.text)
-    except json.JSONDecodeError:
-        # try to extract
+    except (json.JSONDecodeError, ValueError):
         start = res.text.find("{")
-        end = res.text.rfind("}")
-        data = json.loads(res.text[start : end + 1]) if start != -1 else {}
+        if start != -1:
+            try:
+                data, _ = json.JSONDecoder().raw_decode(res.text[start:])
+            except (json.JSONDecodeError, ValueError):
+                data = {}
+        else:
+            data = {}
     classification = data.get("classification", "unclear")
     if classification not in ("product_question", "complaint", "order_status", "quote_request", "spam", "unclear"):
         classification = "unclear"
-    confidence = float(data.get("confidence", 0.5))
-    confidence = max(0.0, min(1.0, confidence))
+    raw_conf = data.get("confidence", 0.5)
+    try:
+        confidence = float(raw_conf)
+        if not (0.0 <= confidence <= 1.0):
+            confidence = 0.5
+    except (ValueError, TypeError):
+        confidence = 0.5
+
+    reasoning = str(data.get("reasoning", "") or "").strip()
     return {
         "classification": classification,
         "confidence": confidence,
-        "reasoning": data.get("reasoning", ""),
+        "reasoning": reasoning,
         "provider": res.provider,
         "model": res.model,
         "tokens_in": res.tokens_in,

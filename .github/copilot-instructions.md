@@ -1,0 +1,1 @@
+/Users/vishrutpandeymacbook/.ai/AGENTS.md

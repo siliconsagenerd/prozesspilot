@@ -22,6 +22,15 @@ class Settings(BaseSettings):
     database_url: str = f"sqlite:///{ROOT / 'data' / 'prozesspilot.db'}"
     data_dir: Path = ROOT / "data"
 
+    # Model allowlists
+    allowed_openai_models: list[str] = ["gpt-4o", "gpt-4o-mini", "gpt-4-turbo", "gpt-3.5-turbo"]
+    allowed_anthropic_models: list[str] = [
+        "claude-3-5-sonnet-latest",
+        "claude-3-5-sonnet-20241022",
+        "claude-3-haiku-20240307",
+    ]
+    allowed_ollama_models: list[str] = ["llama3.1:8b", "llama3:8b", "mistral:latest", "qwen2.5:7b"]
+
     # Provider selection
     provider: Literal["openai", "ollama", "anthropic"] = "ollama"
     fallback_provider: str | None = None

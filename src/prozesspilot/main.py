@@ -43,7 +43,6 @@ app.add_middleware(
         "http://localhost:5173",
         "http://127.0.0.1:5173",
     ],
-    allow_origin_regex=r"https://.*\.vercel\.app",
     allow_methods=["GET", "POST", "OPTIONS"],
     allow_headers=["Content-Type", "X-ProzessPilot-Operator"],
 )
@@ -54,6 +53,19 @@ async def protect_operator_api(request: Request, call_next):
     if settings.operator_auth_required and path.startswith("/api/"):
         if request.headers.get("x-prozesspilot-operator") != "1":
             return JSONResponse({"detail": "authentication required"}, status_code=401)
+    # Origin validation for CSRF defense on state-changing API requests
+    if request.method in ("POST", "PUT", "DELETE", "PATCH") and path.startswith("/api/"):
+        origin = request.headers.get("origin")
+        if origin:
+            allowed = {
+                "https://prozesspilot.duckdns.org",
+                "https://prozesspilot-editorial.vercel.app",
+                "http://localhost:5173",
+                "http://127.0.0.1:5173",
+                "http://testserver",
+            }
+            if origin not in allowed:
+                return JSONResponse({"detail": "untrusted origin"}, status_code=403)
     return await call_next(request)
 
 @app.middleware("http")
@@ -68,8 +80,9 @@ async def security_headers(request: Request, call_next):
         "img-src 'self' data:; "
         "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; "
         "font-src 'self' https://fonts.gstatic.com; "
-        "script-src 'self' 'unsafe-inline'; "
-        "connect-src 'self' http://localhost:* http://127.0.0.1:* https://prozesspilot.duckdns.org;"
+        "script-src 'self'; "
+        "connect-src 'self' http://localhost:* http://127.0.0.1:* https://prozesspilot.duckdns.org; "
+        "frame-ancestors 'none';"
     )
     if request.url.scheme == "https":
         response.headers["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains"
@@ -83,11 +96,14 @@ def _rate_limit(key: str):
     while q and now - q[0] > 60:
         q.popleft()
     if len(q) >= settings.rate_limit_per_minute:
-        raise HTTPException(429, "rate limit exceeded")
+        retry_after = 60
+        if q:
+            retry_after = max(1, int(60 - (now - q[0])))
+        raise HTTPException(429, "rate limit exceeded", headers={"Retry-After": str(retry_after)})
     q.append(now)
 
 TEMPLATES = Environment(
-    loader=FileSystemLoader(str(settings.data_dir.parent / "src" / "prozesspilot" / "templates")),
+    loader=FileSystemLoader(str(__import__("pathlib").Path(__file__).resolve().parent / "templates")),
     autoescape=True,
 )
 
@@ -101,8 +117,8 @@ class InquiryIn(BaseModel):
 
 class ApprovalIn(BaseModel):
     action: str  # approve / edit_approve / reject
-    edited_text: str | None = None
-    reason: str | None = None
+    edited_text: str | None = Field(default=None, max_length=8000)
+    reason: str | None = Field(default=None, max_length=1000)
 
 
 
@@ -295,17 +311,53 @@ async def approve(run_id: str, payload: ApprovalIn):
             actor="operator",
         )
     except ValueError as e:
-        raise HTTPException(409, str(e)) from e
+        msg = str(e)
+        if msg in ("run not found", "no draft"):
+            raise HTTPException(404 if msg == "run not found" else 400, msg) from e
+        raise HTTPException(409, "invalid approval state") from e
     return {"ok": True}
 
 
 @app.get("/api/runs/{run_id}/trace.html", response_class=HTMLResponse)
-def trace_html(run_id: str, request: Request):
+def trace_html(run_id: str, request: Request, lang: str = "de"):
     if request.headers.get("x-prozesspilot-operator") != "1":
         raise HTTPException(401, "operator authentication required")
     data = _fetch_run(run_id)
+    if lang not in ("de", "en"):
+        lang = "de"
+    if lang == "en":
+        try:
+            from prozesspilot.data_tr import DATA_TR
+        except Exception:
+            DATA_TR = {}
+        def td(x):
+            if not isinstance(x, str):
+                return x
+            return DATA_TR.get(x, x)
+        if data.get("inquiry"):
+            data["inquiry"]["subject"] = td(data["inquiry"].get("subject"))
+            data["inquiry"]["body"] = td(data["inquiry"].get("body"))
+        if data.get("customer"):
+            data["customer"]["history"] = td(data["customer"].get("history"))
+        data["classification"] = td(data.get("classification"))
+        data["routing_decision"] = td(data.get("routing_decision"))
+        if data.get("error"):
+            data["error"] = td(data.get("error"))
+        for st in (data.get("steps") or []):
+            st["input_summary"] = td(st.get("input_summary"))
+            st["output_summary"] = td(st.get("output_summary"))
+            if st.get("error"):
+                st["error"] = td(st.get("error"))
+            if st.get("citations"):
+                for c in st["citations"]:
+                    c["title"] = td(c.get("title"))
+        if data.get("draft"):
+            data["draft"]["original_text"] = td(data["draft"].get("original_text"))
+            if data["draft"].get("edited_text"):
+                data["draft"]["edited_text"] = td(data["draft"].get("edited_text"))
+            data["draft"]["reasoning"] = td(data["draft"].get("reasoning"))
     tmpl = TEMPLATES.get_template("trace.html")
-    return tmpl.render(run=data)
+    return tmpl.render(run=data, lang=lang)
 
 
 # Knowledge sources

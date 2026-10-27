@@ -2,16 +2,30 @@
 
 from __future__ import annotations
 
+import logging
+import time
+from collections import defaultdict
+
 from prozesspilot.config import settings
 from prozesspilot.providers.anthropic import AnthropicProvider
 from prozesspilot.providers.ollama import OllamaProvider
 from prozesspilot.providers.openai import OpenAIProvider
+
+logger = logging.getLogger(__name__)
 
 REGISTRY = {
     "openai": OpenAIProvider,
     "anthropic": AnthropicProvider,
     "ollama": OllamaProvider,
 }
+
+_CIRCUIT_STATE: dict[str, dict] = defaultdict(lambda: {"failures": 0, "last_failure": 0.0})
+CIRCUIT_THRESHOLD = 5
+CIRCUIT_COOLDOWN_SECONDS = 30.0
+
+
+def reset_circuit_breaker() -> None:
+    _CIRCUIT_STATE.clear()
 
 
 def get_provider(name: str | None = None):
@@ -42,16 +56,29 @@ async def complete_with_fallback(
     json_mode: bool = False,
     max_tokens: int | None = None,
 ):
+    now = time.time()
     last_err = None
     for p in provider_chain():
+        p_name = getattr(p, "name", type(p).__name__)
+        state = _CIRCUIT_STATE[p_name]
+        if state["failures"] >= CIRCUIT_THRESHOLD and (now - state["last_failure"] < CIRCUIT_COOLDOWN_SECONDS):
+            logger.warning("circuit breaker open for %s, skipping", p_name)
+            continue
+
         try:
-            return await p.complete(
+            res = await p.complete(
                 prompt,
                 system=system,
                 json_mode=json_mode,
                 max_tokens=max_tokens,
             )
+            state["failures"] = 0
+            return res
         except Exception as e:  # noqa: BLE001
+            state["failures"] += 1
+            state["last_failure"] = time.time()
+            logger.warning("provider %s failed: %s", p_name, e)
             last_err = e
             continue
     raise RuntimeError(f"all providers failed: {last_err}")
+

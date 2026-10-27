@@ -150,8 +150,6 @@ async def run_workflow(
         with db_session() as s:
             inq = s.get(Inquiry, inquiry_id)
             # try to find customer email in body? Use inquiry customer link if present
-            if inq.customer_id:
-                pass
         # look up by inquiry's customer if linked else search body for email
         import re
 
@@ -428,16 +426,19 @@ async def approve_run(
     cust_id = None
     with db_session() as s:
         d = s.execute(select(Draft).where(Draft.run_id == run_id)).scalar_one_or_none()
-        final_text = final_text or (d.edited_text or d.original_text)
+        final_text = final_text or (d.edited_text or d.original_text if d else "")
         run = s.get(WorkflowRun, run_id)
         inq = run.inquiry if run else None
         if inq and inq.customer:
             to_email = inq.customer.email
             cust_id = inq.customer.id
 
+    # Output sanitization before outbound mock
+    sanitized_text = (final_text or "").replace("\r\n", "\n").strip()
+
     if to_email:
-        await registry.call("send_email_mock", to=to_email, subject="Re: Ihre Anfrage", body=final_text, run_id=run_id)
-    await registry.call("crm_update_mock", run_id=run_id, customer_id=cust_id, summary=final_text[:200])
+        await registry.call("send_email_mock", to=to_email, subject="Re: Ihre Anfrage", body=sanitized_text, run_id=run_id)
+    await registry.call("crm_update_mock", run_id=run_id, customer_id=cust_id, summary=sanitized_text[:200])
 
     with db_session() as s:
         r = s.get(WorkflowRun, run_id)

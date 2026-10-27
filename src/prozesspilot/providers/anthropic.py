@@ -22,6 +22,8 @@ class AnthropicProvider:
     ) -> LLMResult:
         if not self.api_key:
             raise RuntimeError("ANTHROPIC_API_KEY not set")
+        if self.model not in settings.allowed_anthropic_models:
+            raise ValueError(f"Anthropic model not in allowlist: {self.model}")
         if json_mode:
             json_instruction = "Return ONLY valid JSON. Do not include markdown code fences or any conversational text."
             system = f"{system}\n\n{json_instruction}".strip() if system else json_instruction

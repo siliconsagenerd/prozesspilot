@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="de">
+<html lang="{{ lang }}">
 <head>
 <meta charset="utf-8">
 <title>ProzessPilot Trace {{ run.id }}</title>
@@ -15,47 +15,47 @@
 </style>
 </head>
 <body>
-<h1>Workflow Trace</h1>
+<h1>{% if lang == 'en' %}Workflow Trace{% else %}Workflow Trace{% endif %}</h1>
 <div class="meta">
-  <div><strong>Run</strong> <span class="mono">{{ run.id }}</span></div>
-  <div><strong>Status</strong> <span class="badge">{{ run.state }}</span></div>
-  <div><strong>Klassifikation</strong> {{ run.classification }}</div>
-  <div><strong>Konfidenz</strong> {{ run.confidence }}</div>
-  <div><strong>Routing</strong> {{ run.routing_decision }}</div>
-  <div><strong>Kosten</strong> <span class="mono">{{ run.total_cost_usd }} USD</span></div>
-  <div><strong>Latenz</strong> <span class="mono">{{ run.total_latency_ms }} ms</span></div>
-  <div><strong>Tokens</strong> <span class="mono">{{ run.total_tokens }}</span></div>
+  <div><strong>{% if lang == 'en' %}Run{% else %}Run{% endif %}</strong> <span class="mono">{{ run.id }}</span></div>
+  <div><strong>{% if lang == 'en' %}Status{% else %}Status{% endif %}</strong> <span class="badge">{{ run.state }}</span></div>
+  <div><strong>{% if lang == 'en' %}Classification{% else %}Klassifikation{% endif %}</strong> {{ run.classification }}</div>
+  <div><strong>{% if lang == 'en' %}Confidence{% else %}Konfidenz{% endif %}</strong> {{ run.confidence }}</div>
+  <div><strong>{% if lang == 'en' %}Routing{% else %}Routing{% endif %}</strong> {{ run.routing_decision }}</div>
+  <div><strong>{% if lang == 'en' %}Cost{% else %}Kosten{% endif %}</strong> <span class="mono">{{ run.total_cost_usd }} USD</span></div>
+  <div><strong>{% if lang == 'en' %}Latency{% else %}Latenz{% endif %}</strong> <span class="mono">{{ run.total_latency_ms }} ms</span></div>
+  <div><strong>{% if lang == 'en' %}Tokens{% else %}Tokens{% endif %}</strong> <span class="mono">{{ run.total_tokens }}</span></div>
 </div>
 {% if run.customer %}
 <div class="card">
-  <strong>Kunde:</strong> {{ run.customer.name }} ({{ run.customer.tier }}) · {{ run.customer.email }}<br>
+  <strong>{% if lang == 'en' %}Customer:{% else %}Kunde:{% endif %}</strong> {{ run.customer.name }} ({{ run.customer.tier }}) · {{ run.customer.email }}<br>
   <em>{{ run.customer.history }}</em>
 </div>
 {% endif %}
 {% if run.inquiry %}
 <div class="card">
-  <strong>Anfrage:</strong> {{ run.inquiry.subject }}<br>
+  <strong>{% if lang == 'en' %}Inquiry:{% else %}Anfrage:{% endif %}</strong> {{ run.inquiry.subject }}<br>
   <pre>{{ run.inquiry.body }}</pre>
 </div>
 {% endif %}
-<h2>Schritte</h2>
+<h2>{% if lang == 'en' %}Steps{% else %}Schritte{% endif %}</h2>
 {% for st in run.steps %}
 <div class="step">
   <strong>{{ st.index }}. {{ st.name }}</strong> <span class="badge">{{ st.status }}</span>
   {% if st.model_provider %}<span class="mono">{{ st.model_provider }}/{{ st.model_name }}</span>{% endif %}
-  <div class="mono">latenz {{ st.latency_ms }}ms · tokens {{ st.tokens_in }}/{{ st.tokens_out }} · kosten {{ st.cost_usd }}</div>
-  <div><em>Input:</em> {{ st.input_summary }}</div>
-  <div><em>Output:</em> {{ st.output_summary }}</div>
-  {% if st.citations %}<div><em>Quellen:</em> {% for c in st.citations %}[{{ c.title }}] {% endfor %}</div>{% endif %}
-  {% if st.error %}<div style="color:#c00">Fehler: {{ st.error }}</div>{% endif %}
+  <div class="mono">{% if lang == 'en' %}latency{% else %}latenz{% endif %} {{ st.latency_ms }}ms · tokens {{ st.tokens_in }}/{{ st.tokens_out }} · {% if lang == 'en' %}cost{% else %}kosten{% endif %} {{ st.cost_usd }}</div>
+  <div><em>{% if lang == 'en' %}Input:{% else %}Input:{% endif %}</em> {{ st.input_summary }}</div>
+  <div><em>{% if lang == 'en' %}Output:{% else %}Output:{% endif %}</em> {{ st.output_summary }}</div>
+  {% if st.citations %}<div><em>{% if lang == 'en' %}Sources:{% else %}Quellen:{% endif %}</em> {% for c in st.citations %}[{{ c.title }}] {% endfor %}</div>{% endif %}
+  {% if st.error %}<div style="color:#c00">{% if lang == 'en' %}Error:{% else %}Fehler:{% endif %} {{ st.error }}</div>{% endif %}
 </div>
 {% endfor %}
 {% if run.draft %}
 <div class="card">
-  <h3>Entwurf (Original)</h3>
+  <h3>{% if lang == 'en' %}Draft (Original){% else %}Entwurf (Original){% endif %}</h3>
   <pre>{{ run.draft.original_text }}</pre>
-  {% if run.draft.edited_text %}<h3>Bearbeitet</h3><pre>{{ run.draft.edited_text }}</pre>{% endif %}
-  <div><em>Begründung:</em> {{ run.draft.reasoning }}</div>
+  {% if run.draft.edited_text %}<h3>{% if lang == 'en' %}Edited{% else %}Bearbeitet{% endif %}</h3><pre>{{ run.draft.edited_text }}</pre>{% endif %}
+  <div><em>{% if lang == 'en' %}Reasoning:{% else %}Begründung:{% endif %}</em> {{ run.draft.reasoning }}</div>
 </div>
 {% endif %}
 </body>

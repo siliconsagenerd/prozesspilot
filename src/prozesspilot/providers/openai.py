@@ -23,6 +23,15 @@ class OpenAIProvider:
     ) -> LLMResult:
         if not self.api_key:
             raise RuntimeError("OPENAI_API_KEY not set")
+
+        from urllib.parse import urlparse
+        parsed = urlparse(self.base_url)
+        allowed_hosts = {"api.openai.com", "localhost", "127.0.0.1"}
+        if parsed.hostname and parsed.hostname not in allowed_hosts and not parsed.hostname.endswith(".openai.com"):
+            raise ValueError(f"OpenAI host not permitted: {parsed.hostname}")
+
+        if self.model not in settings.allowed_openai_models:
+            raise ValueError(f"OpenAI model not in allowlist: {self.model}")
         messages = []
         if system:
             messages.append({"role": "system", "content": system})

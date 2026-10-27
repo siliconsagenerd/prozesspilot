@@ -20,6 +20,12 @@ class OllamaProvider:
     async def complete(
         self, prompt: str, system: str = "", json_mode: bool = False, max_tokens: int | None = None
     ) -> LLMResult:
+        from urllib.parse import urlparse
+        parsed = urlparse(self.base_url)
+        allowed_hosts = {"localhost", "127.0.0.1", "host.docker.internal"}
+        if parsed.hostname and parsed.hostname not in allowed_hosts:
+            raise ValueError(f"Ollama host not permitted: {parsed.hostname}")
+
         opts = {"temperature": 0.2}
         if max_tokens:
             opts["num_predict"] = max_tokens
