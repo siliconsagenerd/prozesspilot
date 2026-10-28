@@ -570,4 +570,5 @@ async def approve_run(
                 if not run.outbound_completed:
                     run.state = "Approving"
                     run.error = str(e)
+        audit(run_id, "outbound_failed", actor=actor, payload={"error": str(e)})
         raise
