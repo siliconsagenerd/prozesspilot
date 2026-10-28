@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+from datetime import UTC
 
 from sqlalchemy import event, select
 
@@ -12,15 +13,13 @@ from prozesspilot.db.models import now as _now
 from prozesspilot.db.session import db_session
 
 
-from datetime import timezone as _tz
-
 def _hash_event(row: AuditEvent) -> str:
     created = ""
     if row.created_at is not None:
         dt = row.created_at
         if dt.tzinfo is None:
-            dt = dt.replace(tzinfo=_tz.utc)
-        created = dt.astimezone(_tz.utc).isoformat()
+            dt = dt.replace(tzinfo=UTC)
+        created = dt.astimezone(UTC).isoformat()
     payload = {
         "id": row.id,
         "run_id": row.run_id,

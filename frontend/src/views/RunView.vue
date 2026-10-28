@@ -85,7 +85,7 @@
         </div>
       </div>
 
-      <div v-if="run.state === 'AwaitingApproval' || run.state === 'ReadyForReview'" class="panel approval">
+      <div v-if="run.state === 'AwaitingApproval' || run.state === 'ReadyForReview' || run.state === 'Approving'" class="panel approval">
         <div class="panel-head">
           <span class="panel-label">{{ t('run.approval') }}</span>
         </div>

@@ -29,10 +29,18 @@ class OpenAIProvider:
         allowed_hosts = {"api.openai.com", "openrouter.ai", "localhost", "127.0.0.1"}
         extra_hosts = [h.strip() for h in (getattr(settings, "openai_allowed_hosts", "") or "").split(",") if h.strip()]
         allowed_hosts.update(extra_hosts)
-        if parsed.hostname and parsed.hostname not in allowed_hosts and not parsed.hostname.endswith(".openai.com") and not parsed.hostname.endswith(".openrouter.ai"):
+        host_ok = (
+            not parsed.hostname
+            or parsed.hostname in allowed_hosts
+            or parsed.hostname.endswith(".openai.com")
+            or parsed.hostname.endswith(".openrouter.ai")
+        )
+        if parsed.hostname and not host_ok:
             raise ValueError(f"OpenAI host not permitted: {parsed.hostname}")
 
-        allowed_models = list(settings.allowed_openai_models) + [m.strip() for m in (getattr(settings, "openai_allowed_models", "") or "").split(",") if m.strip()]
+        allowed_models = list(settings.allowed_openai_models) + [
+            m.strip() for m in (getattr(settings, "openai_allowed_models", "") or "").split(",") if m.strip()
+        ]
         if "laya-v3" not in allowed_models:
             allowed_models.append("laya-v3")
         if "laya/laya" not in allowed_models:

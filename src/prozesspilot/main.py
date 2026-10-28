@@ -2,8 +2,8 @@
 
 from __future__ import annotations
 
-import time
 import hmac
+import time
 from collections import defaultdict, deque
 from contextlib import asynccontextmanager
 
@@ -203,16 +203,21 @@ async def run(
     prompt_variant: str = "improved",
     classify_max_tokens: int | None = None,
     draft_max_tokens: int | None = None,
+    experimental: bool = False,
 ):
     _rate_limit(request.client.host if request.client else "anon")
+    ceiling = settings.experimental_max_tokens if experimental else settings.max_tokens_per_call
     for _name, _v in (("classify_max_tokens", classify_max_tokens), ("draft_max_tokens", draft_max_tokens)):
         if _v is not None and (_v <= 0 or _v > 8192):
             raise HTTPException(400, f"{_name} must be between 1 and 8192")
+        if _v is not None and _v > ceiling:
+            raise HTTPException(400, f"{_name} exceeds configured maximum of {ceiling}")
     run_id = await run_workflow(
         inquiry_id,
         prompt_variant=prompt_variant,
         classify_max_tokens=classify_max_tokens,
         draft_max_tokens=draft_max_tokens,
+        experimental=experimental,
     )
     return {"run_id": run_id}
 
@@ -263,6 +268,13 @@ def _fetch_run(run_id: str):
             "classification_confidence": r.confidence,
             "routing_decision": r.routing_decision,
             "requires_approval": r.requires_approval,
+            "email_sent": r.email_sent,
+            "crm_updated": r.crm_updated,
+            "outbound_completed": r.outbound_completed,
+            "approval_owner": r.approval_owner,
+            "approval_lease_expires_at": (
+                r.approval_lease_expires_at.isoformat() if r.approval_lease_expires_at else None
+            ),
             "total_cost_usd": r.total_cost_usd,
             "total_latency_ms": r.total_latency_ms,
             "total_tokens": r.total_tokens,
@@ -334,6 +346,8 @@ async def approve(run_id: str, payload: ApprovalIn):
         if msg in ("run not found", "no draft"):
             raise HTTPException(404 if msg == "run not found" else 400, msg) from e
         raise HTTPException(409, "invalid approval state") from e
+    except Exception as e:
+        raise HTTPException(500, "approval failed") from e
     return {"ok": True}
 
 

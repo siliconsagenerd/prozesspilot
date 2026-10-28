@@ -53,6 +53,7 @@ class Settings(BaseSettings):
     max_inquiry_body_chars: int = 4000
     max_kb_results: int = 5
     max_tokens_per_call: int = 1024
+    experimental_max_tokens: int = 4096
     max_workflow_tokens: int = 4000
     rate_limit_per_minute: int = 30
 

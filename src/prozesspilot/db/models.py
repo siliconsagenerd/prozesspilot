@@ -82,6 +82,11 @@ class WorkflowRun(Base):
     finished_at: Mapped[dt.datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     error: Mapped[str | None] = mapped_column(Text, nullable=True)
     outbound_completed: Mapped[bool] = mapped_column(Boolean, default=False)
+    email_sent: Mapped[bool] = mapped_column(Boolean, default=False)
+    crm_updated: Mapped[bool] = mapped_column(Boolean, default=False)
+    approval_owner: Mapped[str | None] = mapped_column(String(36), nullable=True)
+    approval_claimed_at: Mapped[dt.datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    approval_lease_expires_at: Mapped[dt.datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     inquiry: Mapped[Inquiry] = relationship()
 
 
