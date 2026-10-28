@@ -27,7 +27,7 @@ class OpenAIProvider:
         from urllib.parse import urlparse
         parsed = urlparse(self.base_url)
         allowed_hosts = {"api.openai.com", "openrouter.ai", "localhost", "127.0.0.1"}
-        extra_hosts = [h.strip() for h in (getattr(settings, "openai_allowed_hosts", "") or "").split(",") if h.strip()]
+        extra_hosts = [h.strip() for h in settings.openai_allowed_hosts.split(",") if h.strip()]
         allowed_hosts.update(extra_hosts)
         host_ok = (
             not parsed.hostname
@@ -38,13 +38,8 @@ class OpenAIProvider:
         if parsed.hostname and not host_ok:
             raise ValueError(f"OpenAI host not permitted: {parsed.hostname}")
 
-        allowed_models = list(settings.allowed_openai_models) + [
-            m.strip() for m in (getattr(settings, "openai_allowed_models", "") or "").split(",") if m.strip()
-        ]
-        if "laya-v3" not in allowed_models:
-            allowed_models.append("laya-v3")
-        if "laya/laya" not in allowed_models:
-            allowed_models.append("laya/laya")
+        extra_models = [m.strip() for m in settings.openai_allowed_models.split(",") if m.strip()]
+        allowed_models = list(settings.allowed_openai_models) + extra_models
         if self.model not in allowed_models:
             raise ValueError(f"OpenAI model not in allowlist: {self.model}")
         messages = []

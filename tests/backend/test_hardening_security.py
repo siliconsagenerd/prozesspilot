@@ -1,14 +1,17 @@
-import pytest
 import asyncio
-from prozesspilot.tools.email_mock import send_email_mock
-from prozesspilot.observability.audit import audit
+
+import pytest
+from fastapi.testclient import TestClient
+
+from prozesspilot.config import settings
 from prozesspilot.db.models import AuditEvent
 from prozesspilot.db.session import db_session
-from prozesspilot.providers.openai import OpenAIProvider
-from prozesspilot.providers.ollama import OllamaProvider
-from prozesspilot.config import settings
-from fastapi.testclient import TestClient
 from prozesspilot.main import app
+from prozesspilot.observability.audit import audit
+from prozesspilot.providers.ollama import OllamaProvider
+from prozesspilot.providers.openai import OpenAIProvider
+from prozesspilot.tools.email_mock import send_email_mock
+
 
 def test_email_mock_path_traversal_sanitized(tmp_path, monkeypatch):
     monkeypatch.setattr(settings, "mock_email_dir", tmp_path)

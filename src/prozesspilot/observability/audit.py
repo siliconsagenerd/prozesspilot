@@ -43,7 +43,12 @@ def audit(run_id: str | None, event_type: str, actor: str = "system", payload: d
                 safe_payload[k] = v
 
     with db_session() as s:
-        stmt = select(AuditEvent.event_hash).order_by(AuditEvent.created_at.desc(), AuditEvent.id.desc()).limit(1)
+        stmt = (
+            select(AuditEvent.event_hash)
+            .order_by(AuditEvent.created_at.desc(), AuditEvent.id.desc())
+            .limit(1)
+            .with_for_update()
+        )
         if run_id is not None:
             stmt = stmt.where(AuditEvent.run_id == run_id)
         else:

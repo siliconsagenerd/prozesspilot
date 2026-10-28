@@ -64,10 +64,10 @@ class Settings(BaseSettings):
     # Mocked outbound
     mock_email_dir: Path = ROOT / "data" / "mock_emails"
     # Public demo safety
-    operator_auth_required: bool = False
+    operator_auth_required: bool = False  # Set True in production and provide OPERATOR_TOKEN
     operator_token: str = ""
     openai_allowed_hosts: str = ""
-    openai_allowed_models: str = "laya-v3"
+    openai_allowed_models: str = "laya-v3,laya/laya"
 
     @property
     def is_cloud_key_present(self) -> bool:
@@ -78,6 +78,8 @@ class Settings(BaseSettings):
         self.mock_email_dir.mkdir(parents=True, exist_ok=True)
 
     def validate_provider_keys(self) -> None:
+        if self.operator_auth_required and not self.operator_token:
+            raise ValueError("OPERATOR_TOKEN required when OPERATOR_AUTH_REQUIRED=true")
         if self.provider == "openai" and not self.openai_api_key:
             raise ValueError("OPENAI_API_KEY required when provider is 'openai'")
         if self.provider == "anthropic" and not self.anthropic_api_key:
