@@ -371,6 +371,7 @@ def _fail_run(run_id: str, err: str) -> None:
         inq = s.get(Inquiry, r.inquiry_id)
         if inq:
             inq.status = "Failed"
+    _finalize_totals(run_id)
     audit(run_id, "workflow_failed", payload={"error": err})
 
 
@@ -400,23 +401,27 @@ async def approve_run(
             # Repeated approval is a no-op: outbound mock actions were already recorded.
             audit(run_id, "approval_duplicate_ignored", actor=actor, payload={"reason": reason})
             return
+        if run.state not in ("AwaitingApproval", "ReadyForReview"):
+            raise ValueError("invalid approval state")
         draft = s.execute(select(Draft).where(Draft.run_id == run_id)).scalar_one_or_none()
         if draft is None:
             raise ValueError("no draft")
         if action == "edit_approve" and edited_text:
             draft.edited_text = edited_text
         s.add(Approval(run_id=run_id, action=action, edited_text=edited_text, reason=reason, actor=actor))
+        # Atomically claim the run before any outbound side effects.
+        if action == "reject":
+            run.state = "Rejected"
+        else:
+            run.state = "Approved"
+        run.finished_at = datetime.now(UTC)
+        inq = run.inquiry
+        if inq:
+            inq.status = run.state
 
     audit(run_id, f"approval_{action}", actor=actor, payload={"reason": reason})
 
     if action == "reject":
-        with db_session() as s:
-            r = s.get(WorkflowRun, run_id)
-            r.state = "Rejected"
-            r.finished_at = datetime.now(UTC)
-            inq = s.get(Inquiry, r.inquiry_id)
-            if inq:
-                inq.status = "Rejected"
         audit(run_id, "rejected", actor=actor, payload={"reason": reason})
         return
 
@@ -440,13 +445,6 @@ async def approve_run(
         await registry.call("send_email_mock", to=to_email, subject="Re: Ihre Anfrage", body=sanitized_text, run_id=run_id)
     await registry.call("crm_update_mock", run_id=run_id, customer_id=cust_id, summary=sanitized_text[:200])
 
-    with db_session() as s:
-        r = s.get(WorkflowRun, run_id)
-        r.state = "Approved"
-        r.finished_at = datetime.now(UTC)
-        inq = s.get(Inquiry, r.inquiry_id)
-        if inq:
-            inq.status = "Approved"
     audit(
         run_id,
         "approved_and_mock_sent",

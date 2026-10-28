@@ -64,6 +64,9 @@ class Settings(BaseSettings):
     mock_email_dir: Path = ROOT / "data" / "mock_emails"
     # Public demo safety
     operator_auth_required: bool = False
+    operator_token: str = ""
+    openai_allowed_hosts: str = ""
+    openai_allowed_models: str = "laya-v3"
 
     @property
     def is_cloud_key_present(self) -> bool:

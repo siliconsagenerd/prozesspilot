@@ -7,4 +7,4 @@ COPY alembic.ini .
 COPY data ./data
 RUN pip install --no-cache-dir .
 ENV PYTHONPATH=/app/src
-CMD ["prozesspilot", "serve", "--host", "0.0.0.0", "--port", "8000"]
+CMD ["sh", "-c", "alembic upgrade head && prozesspilot serve --host 0.0.0.0 --port 8000"]

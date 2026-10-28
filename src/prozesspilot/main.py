@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import time
+import hmac
 from collections import defaultdict, deque
 from contextlib import asynccontextmanager
 
@@ -23,7 +24,7 @@ from prozesspilot.db.models import (
     WorkflowRun,
     WorkflowStep,
 )
-from prozesspilot.db.session import db_session, migrate_db
+from prozesspilot.db.session import db_session, init_db
 from prozesspilot.observability.audit import audit
 
 
@@ -31,7 +32,7 @@ from prozesspilot.observability.audit import audit
 async def lifespan(app: FastAPI):
     settings.ensure_dirs()
     settings.validate_provider_keys()
-    migrate_db()
+    init_db()
     yield
 
 app = FastAPI(title="ProzessPilot", lifespan=lifespan)
@@ -42,6 +43,8 @@ app.add_middleware(
         "https://prozesspilot-editorial.vercel.app",
         "http://localhost:5173",
         "http://127.0.0.1:5173",
+        "http://localhost:5174",
+        "http://127.0.0.1:5174",
     ],
     allow_methods=["GET", "POST", "OPTIONS"],
     allow_headers=["Content-Type", "X-ProzessPilot-Operator"],
@@ -50,8 +53,10 @@ app.add_middleware(
 @app.middleware("http")
 async def protect_operator_api(request: Request, call_next):
     path = request.url.path
-    if settings.operator_auth_required and path.startswith("/api/"):
-        if request.headers.get("x-prozesspilot-operator") != "1":
+    if settings.operator_auth_required and path.startswith("/api/") and request.method != "OPTIONS":
+        expected = settings.operator_token or "1"
+        supplied = request.headers.get("x-prozesspilot-operator", "")
+        if not hmac.compare_digest(supplied, expected):
             return JSONResponse({"detail": "authentication required"}, status_code=401)
     # Origin validation for CSRF defense on state-changing API requests
     if request.method in ("POST", "PUT", "DELETE", "PATCH") and path.startswith("/api/"):
@@ -62,6 +67,8 @@ async def protect_operator_api(request: Request, call_next):
                 "https://prozesspilot-editorial.vercel.app",
                 "http://localhost:5173",
                 "http://127.0.0.1:5173",
+                "http://localhost:5174",
+                "http://127.0.0.1:5174",
                 "http://testserver",
             }
             if origin not in allowed:
@@ -210,7 +217,10 @@ async def run(
 # Workflow runs
 @app.get("/api/runs/{run_id}")
 def get_run(run_id: str, request: Request):
-    if request.headers.get("x-prozesspilot-operator") != "1":
+    expected = settings.operator_token or "1"
+    supplied = request.headers.get("x-prozesspilot-operator", "")
+    import hmac as _hmac
+    if not _hmac.compare_digest(supplied, expected):
         raise HTTPException(401, "operator authentication required")
     return _fetch_run(run_id)
 

@@ -67,12 +67,16 @@ async def run_eval(
     original_provider = settings.provider
     if provider_override:
         settings.provider = provider_override  # type: ignore
-    preflight_evaluation(
-        settings,
-        CASES,
-        {prompt_variant: prompt_variant},
-        {"max_tokens_per_call": settings.max_tokens_per_call},
-    )
+    try:
+        preflight_evaluation(
+            settings,
+            CASES,
+            {prompt_variant: prompt_variant},
+            {"max_tokens_per_call": settings.max_tokens_per_call},
+        )
+    except Exception:
+        settings.provider = original_provider  # type: ignore
+        raise
     selected_cases = CASES
     if case_ids is not None:
         wanted = set(case_ids)

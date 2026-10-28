@@ -31,6 +31,8 @@ def migrate_db() -> None:
         return
     with engine.begin() as conn:
         cols = {r[1] for r in conn.execute(text("PRAGMA table_info(audit_events)"))}
+        if not cols:
+            return
         if "prev_hash" not in cols:
             conn.execute(text("ALTER TABLE audit_events ADD COLUMN prev_hash VARCHAR(64)"))
         if "event_hash" not in cols:

@@ -64,9 +64,14 @@ class ApiError extends Error {
 }
 
 async function requestJson<T>(url: string, init?: RequestInit): Promise<T> {
+  const headers = new Headers(init?.headers ?? {});
+  if (!headers.has("x-prozesspilot-operator")) {
+    headers.set("x-prozesspilot-operator", "1");
+  }
+  const mergedInit = { ...init, headers };
   let response: Response;
   try {
-    response = await fetch(url, init);
+    response = await fetch(url, mergedInit);
   } catch {
     throw new ApiError("Netzwerkfehler beim Aufruf der API.", 0);
   }

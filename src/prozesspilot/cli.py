@@ -75,9 +75,9 @@ def serve(host, port):
 @main.command()
 def evalrun():
     """Run evaluation suite (improved prompt)."""
-    from prozesspilot.eval.runner import run_eval_sync
+    from prozesspilot.eval.runner import run_eval
 
-    asyncio.run(run_eval_sync())
+    asyncio.run(run_eval())
 
 
 if __name__ == "__main__":
