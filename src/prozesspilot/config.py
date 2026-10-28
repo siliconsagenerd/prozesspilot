@@ -23,7 +23,7 @@ class Settings(BaseSettings):
     data_dir: Path = ROOT / "data"
 
     # Model allowlists
-    allowed_openai_models: list[str] = ["gpt-4o", "gpt-4o-mini", "gpt-4-turbo", "gpt-3.5-turbo"]
+    allowed_openai_models: list[str] = ["gpt-4o", "gpt-4o-mini", "gpt-4-turbo", "gpt-3.5-turbo", "laya-v3", "laya/laya"]
     allowed_anthropic_models: list[str] = [
         "claude-3-5-sonnet-latest",
         "claude-3-5-sonnet-20241022",
@@ -67,7 +67,6 @@ class Settings(BaseSettings):
     operator_auth_required: bool = False  # Set True in production and provide OPERATOR_TOKEN
     operator_token: str = ""
     openai_allowed_hosts: str = ""
-    openai_allowed_models: str = "laya-v3,laya/laya"
 
     @property
     def is_cloud_key_present(self) -> bool:

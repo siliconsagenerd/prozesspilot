@@ -3,8 +3,9 @@
 from __future__ import annotations
 
 import hmac
+import threading
 import time
-from collections import defaultdict, deque
+from collections import deque
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI, HTTPException, Request
@@ -94,19 +95,42 @@ async def security_headers(request: Request, call_next):
         response.headers["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains"
     return response
 
-_rate_buckets = defaultdict(deque)
+_MAX_RATE_BUCKETS = 10000
+_rate_buckets: dict[str, deque] = {}
+_rate_lock = threading.Lock()
+
+
+def _rate_limit_key(request: Request) -> str:
+    """Key by validated operator token when auth is enabled, otherwise by client IP."""
+    supplied = request.headers.get("x-prozesspilot-operator", "")
+    if settings.operator_auth_required and supplied and hmac.compare_digest(
+        supplied, settings.operator_token or ""
+    ):
+        return f"op:{supplied}"
+    return request.client.host if request.client else "anon"
+
 
 def _rate_limit(key: str):
     now = time.time()
-    q = _rate_buckets[key]
-    while q and now - q[0] > 60:
-        q.popleft()
-    if len(q) >= settings.rate_limit_per_minute:
-        retry_after = 60
-        if q:
-            retry_after = max(1, int(60 - (now - q[0])))
-        raise HTTPException(429, "rate limit exceeded", headers={"Retry-After": str(retry_after)})
-    q.append(now)
+    with _rate_lock:
+        if key not in _rate_buckets and len(_rate_buckets) >= _MAX_RATE_BUCKETS:
+            for existing in list(_rate_buckets):
+                queue = _rate_buckets[existing]
+                while queue and now - queue[0] > 60:
+                    queue.popleft()
+                if not queue:
+                    del _rate_buckets[existing]
+                if len(_rate_buckets) < _MAX_RATE_BUCKETS:
+                    break
+        queue = _rate_buckets.setdefault(key, deque())
+        while queue and now - queue[0] > 60:
+            queue.popleft()
+        if len(queue) >= settings.rate_limit_per_minute:
+            retry_after = 60
+            if queue:
+                retry_after = max(1, int(60 - (now - queue[0])))
+            raise HTTPException(429, "rate limit exceeded", headers={"Retry-After": str(retry_after)})
+        queue.append(now)
 
 TEMPLATES = Environment(
     loader=FileSystemLoader(str(__import__("pathlib").Path(__file__).resolve().parent / "templates")),
@@ -134,7 +158,7 @@ def health():
 
 @app.get("/public/demo-snapshot")
 def public_demo_snapshot(request: Request):
-    _rate_limit(request.client.host if request.client else "anon")
+    _rate_limit(_rate_limit_key(request))
     import json
     from pathlib import Path
 
@@ -154,7 +178,7 @@ def list_customers():
 # Inquiries
 @app.post("/api/inquiries")
 async def create_inquiry(payload: InquiryIn, request: Request):
-    _rate_limit(request.client.host if request.client else "anon")
+    _rate_limit(_rate_limit_key(request))
     if len(payload.body) > settings.max_inquiry_body_chars:
         raise HTTPException(413, "body too large")
     with db_session() as s:
@@ -204,7 +228,7 @@ async def run(
     draft_max_tokens: int | None = None,
     experimental: bool = False,
 ):
-    _rate_limit(request.client.host if request.client else "anon")
+    _rate_limit(_rate_limit_key(request))
     ceiling = settings.experimental_max_tokens if experimental else settings.max_tokens_per_call
     for _name, _v in (("classify_max_tokens", classify_max_tokens), ("draft_max_tokens", draft_max_tokens)):
         if _v is not None and (_v <= 0 or _v > 8192):
@@ -410,7 +434,7 @@ def eval_cases():
 
 @app.post("/api/eval/run")
 async def eval_run(request: Request, prompt_variant: str = "improved", provider: str | None = None):
-    _rate_limit(request.client.host if request.client else "anon")
+    _rate_limit(_rate_limit_key(request))
     from prozesspilot.eval.runner import run_eval
 
     return await run_eval(prompt_variant=prompt_variant, provider_override=provider)

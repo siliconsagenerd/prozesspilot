@@ -16,3 +16,10 @@ data/evaluations/
 data/customers.json
 .env*
 .memory-symlink-target.bak
+
+# Local agent/tooling files (not part of the project)
+.agent/
+.agentskills
+.dirac/
+AGENTS.md
+PROJECT_MEMORY.md

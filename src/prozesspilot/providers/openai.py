@@ -38,8 +38,7 @@ class OpenAIProvider:
         if parsed.hostname and not host_ok:
             raise ValueError(f"OpenAI host not permitted: {parsed.hostname}")
 
-        extra_models = [m.strip() for m in settings.openai_allowed_models.split(",") if m.strip()]
-        allowed_models = list(settings.allowed_openai_models) + extra_models
+        allowed_models = list(settings.allowed_openai_models)
         if self.model not in allowed_models:
             raise ValueError(f"OpenAI model not in allowlist: {self.model}")
         messages = []

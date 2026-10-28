@@ -1,3 +1,5 @@
+const OPERATOR_TOKEN = (import.meta as any).env?.VITE_OPERATOR_TOKEN || "1";
+
 export const API = {
   base: "/api",
   async getDemoSnapshot() {
@@ -26,7 +28,7 @@ export const API = {
 
   async getRun(id: string) {
     return requestJson<any>(`${this.base}/runs/${id}`, {
-      headers: { "X-ProzessPilot-Operator": "1" },
+      headers: { "X-ProzessPilot-Operator": OPERATOR_TOKEN },
     });
   },
 
@@ -66,7 +68,7 @@ class ApiError extends Error {
 async function requestJson<T>(url: string, init?: RequestInit): Promise<T> {
   const headers = new Headers(init?.headers ?? {});
   if (!headers.has("x-prozesspilot-operator")) {
-    headers.set("x-prozesspilot-operator", "1");
+    headers.set("x-prozesspilot-operator", OPERATOR_TOKEN);
   }
   const mergedInit = { ...init, headers };
   let response: Response;
