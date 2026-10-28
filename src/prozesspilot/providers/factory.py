@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import contextvars
 import logging
 import time
 from collections import defaultdict
@@ -28,21 +29,23 @@ def reset_circuit_breaker() -> None:
     _CIRCUIT_STATE.clear()
 
 
+_provider_override_var: contextvars.ContextVar = contextvars.ContextVar("provider_override", default=None)
+
+def set_provider_override(name: str | None = None):
+    _provider_override_var.set(name)
+
 def get_provider(name: str | None = None):
-    name = name or settings.provider
+    if name is None:
+        name = _provider_override_var.get() or settings.provider
     cls = REGISTRY.get(name)
     if cls is None:
         raise ValueError(f"unknown provider {name}")
     return cls()
 
 
-def provider_chain() -> list:
-    """Return explicit provider chain.
-
-    Only uses explicitly configured settings.provider and, if non-empty,
-    settings.fallback_provider. No silent or automatic fallback to Ollama.
-    """
-    primary = settings.provider
+def provider_chain(provider: str | None = None) -> list:
+    """Return explicit provider chain."""
+    primary = provider or _provider_override_var.get() or settings.provider
     chain = [get_provider(primary)]
     fb = (settings.fallback_provider or "").strip()
     if fb and fb != primary:
@@ -55,10 +58,11 @@ async def complete_with_fallback(
     system: str = "",
     json_mode: bool = False,
     max_tokens: int | None = None,
+    provider: str | None = None,
 ):
     now = time.time()
     last_err = None
-    for p in provider_chain():
+    for p in provider_chain(provider):
         p_name = getattr(p, "name", type(p).__name__)
         state = _CIRCUIT_STATE[p_name]
         if state["failures"] >= CIRCUIT_THRESHOLD and (now - state["last_failure"] < CIRCUIT_COOLDOWN_SECONDS):

@@ -26,7 +26,7 @@ def test_protected_api_rejects_unauthenticated(monkeypatch):
     r = client.get("/api/inquiries")
     assert r.status_code == 401
     r_allowed = client.get("/api/inquiries", headers={"X-ProzessPilot-Operator": "1"})
-    assert r_allowed.status_code == 200
+    assert r_allowed.status_code == 401
 
 
 def test_public_cannot_invoke_inference(monkeypatch):

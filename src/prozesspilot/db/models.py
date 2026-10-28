@@ -81,6 +81,7 @@ class WorkflowRun(Base):
     started_at: Mapped[dt.datetime] = mapped_column(DateTime(timezone=True), default=now)
     finished_at: Mapped[dt.datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     error: Mapped[str | None] = mapped_column(Text, nullable=True)
+    outbound_completed: Mapped[bool] = mapped_column(Boolean, default=False)
     inquiry: Mapped[Inquiry] = relationship()
 
 

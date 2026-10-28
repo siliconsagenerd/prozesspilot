@@ -54,9 +54,9 @@ app.add_middleware(
 async def protect_operator_api(request: Request, call_next):
     path = request.url.path
     if settings.operator_auth_required and path.startswith("/api/") and request.method != "OPTIONS":
-        expected = settings.operator_token or "1"
+        expected = settings.operator_token
         supplied = request.headers.get("x-prozesspilot-operator", "")
-        if not hmac.compare_digest(supplied, expected):
+        if not expected or not hmac.compare_digest(supplied, expected):
             return JSONResponse({"detail": "authentication required"}, status_code=401)
     # Origin validation for CSRF defense on state-changing API requests
     if request.method in ("POST", "PUT", "DELETE", "PATCH") and path.startswith("/api/"):
@@ -205,6 +205,9 @@ async def run(
     draft_max_tokens: int | None = None,
 ):
     _rate_limit(request.client.host if request.client else "anon")
+    for _name, _v in (("classify_max_tokens", classify_max_tokens), ("draft_max_tokens", draft_max_tokens)):
+        if _v is not None and (_v <= 0 or _v > 8192):
+            raise HTTPException(400, f"{_name} must be between 1 and 8192")
     run_id = await run_workflow(
         inquiry_id,
         prompt_variant=prompt_variant,
@@ -215,12 +218,18 @@ async def run(
 
 
 # Workflow runs
+def _operator_authorized(request: Request) -> bool:
+    if not settings.operator_auth_required:
+        return True
+    expected = settings.operator_token
+    if not expected:
+        return False
+    supplied = request.headers.get("x-prozesspilot-operator", "")
+    return hmac.compare_digest(supplied, expected)
+
 @app.get("/api/runs/{run_id}")
 def get_run(run_id: str, request: Request):
-    expected = settings.operator_token or "1"
-    supplied = request.headers.get("x-prozesspilot-operator", "")
-    import hmac as _hmac
-    if not _hmac.compare_digest(supplied, expected):
+    if not _operator_authorized(request):
         raise HTTPException(401, "operator authentication required")
     return _fetch_run(run_id)
 
@@ -330,7 +339,7 @@ async def approve(run_id: str, payload: ApprovalIn):
 
 @app.get("/api/runs/{run_id}/trace.html", response_class=HTMLResponse)
 def trace_html(run_id: str, request: Request, lang: str = "de"):
-    if request.headers.get("x-prozesspilot-operator") != "1":
+    if not _operator_authorized(request):
         raise HTTPException(401, "operator authentication required")
     data = _fetch_run(run_id)
     if lang not in ("de", "en"):
@@ -387,7 +396,8 @@ def eval_cases():
 
 
 @app.post("/api/eval/run")
-async def eval_run(prompt_variant: str = "improved", provider: str | None = None):
+async def eval_run(request: Request, prompt_variant: str = "improved", provider: str | None = None):
+    _rate_limit(request.client.host if request.client else "anon")
     from prozesspilot.eval.runner import run_eval
 
     return await run_eval(prompt_variant=prompt_variant, provider_override=provider)

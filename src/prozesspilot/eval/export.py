@@ -90,14 +90,14 @@ def extract_run_record(run_id: str) -> dict[str, Any]:
             raw_cited = list(draft.cited_sources)
         elif draft is not None and full_text:
             raw_cited, _ = extract_explicit_citations(full_text, retrieved_sources)
-        elif draft_step is not None and draft_step.citations:
-            raw_cited = list(draft_step.citations)
         else:
             raw_cited = []
         if draft is not None and draft.citation_format_issues is not None:
             citation_format_issues = list(draft.citation_format_issues)
-        else:
+        elif full_text:
             _, citation_format_issues = extract_explicit_citations(full_text, retrieved_sources)
+        else:
+            citation_format_issues = []
         cited_sources = []
         seen = set()
         for item in raw_cited:

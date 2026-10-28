@@ -64,18 +64,18 @@ async def run_eval(
         draft_max_tokens = 512
     if classify_max_tokens is None:
         classify_max_tokens = 128
-    original_provider = settings.provider
-    if provider_override:
-        settings.provider = provider_override  # type: ignore
+    effective_provider = provider_override or settings.provider
+    import copy
+    eval_settings = copy.copy(settings)
+    eval_settings.provider = effective_provider  # type: ignore
     try:
         preflight_evaluation(
-            settings,
+            eval_settings,
             CASES,
             {prompt_variant: prompt_variant},
             {"max_tokens_per_call": settings.max_tokens_per_call},
         )
     except Exception:
-        settings.provider = original_provider  # type: ignore
         raise
     selected_cases = CASES
     if case_ids is not None:
@@ -109,6 +109,7 @@ async def run_eval(
                 prompt_variant=prompt_variant,
                 classify_max_tokens=classify_max_tokens,
                 draft_max_tokens=draft_max_tokens,
+                provider_override=provider_override,
             )
 
             with db_session() as s:
@@ -169,11 +170,11 @@ async def run_eval(
                 row = Evaluation(
                     case_id=case["id"],
                     prompt_variant=prompt_variant,
-                    model_provider=settings.provider,
+                    model_provider=effective_provider,
                     model_name=(
                         settings.ollama_model
-                        if settings.provider == "ollama"
-                        else (settings.openai_model if settings.provider == "openai" else settings.anthropic_model)
+                        if effective_provider == "ollama"
+                        else (settings.openai_model if effective_provider == "openai" else settings.anthropic_model)
                     ),
                     predicted_classification=predicted,
                     expected_classification=case["expected_classification"],
@@ -246,10 +247,7 @@ async def run_eval(
                 }
                 return result
 
-    try:
-        results = list(await asyncio.gather(*(_run_one(case) for case in selected_cases)))
-    finally:
-        settings.provider = original_provider  # type: ignore
+    results = list(await asyncio.gather(*(_run_one(case) for case in selected_cases)))
 
     # aggregate
     n = len(results)
@@ -268,7 +266,7 @@ async def run_eval(
     agg = {
         "n": n,
         "prompt_variant": prompt_variant,
-        "provider": settings.provider,
+        "provider": effective_provider,
         "classification_accuracy": round(cls_acc, 3),
         "routing_accuracy": round(route_acc, 3),
         "routing_policy_compliance": round(policy_acc, 3),

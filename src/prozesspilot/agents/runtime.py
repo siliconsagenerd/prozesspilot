@@ -61,8 +61,14 @@ async def run_workflow(
     prompt_variant: str = "improved",
     classify_max_tokens: int | None = None,
     draft_max_tokens: int | None = None,
+    provider_override: str | None = None,
 ) -> str:
     """Run full workflow for an inquiry. Returns run_id."""
+    for _v in (classify_max_tokens, draft_max_tokens):
+        if _v is not None and (_v <= 0 or _v > 8192):
+            raise ValueError("max_tokens must be between 1 and 8192")
+    from prozesspilot.providers.factory import set_provider_override
+    set_provider_override(provider_override)
     with db_session() as s:
         inq = s.get(Inquiry, inquiry_id)
         if inq is None:
@@ -391,33 +397,73 @@ async def approve_run(
     reason: str | None = None,
     actor: str = "operator",
 ) -> None:
-    from prozesspilot.db.models import Approval
+    from prozesspilot.db.models import Approval, WorkflowRun
+    from prozesspilot.tools.registry import registry
+    from sqlalchemy import update
 
+    if action not in ("approve", "edit_approve", "reject"):
+        raise ValueError("bad action")
+    if action == "edit_approve":
+        if not edited_text or not edited_text.strip():
+            raise ValueError("edited_text required")
+        edited_text = edited_text.strip()
+    if action == "reject" and not reason:
+        raise ValueError("reason required")
+
+    now = datetime.now(UTC)
+
+    # Claim the run atomically. Concurrent workers that lose the race get 0 rows.
     with db_session() as s:
         run = s.get(WorkflowRun, run_id)
         if run is None:
             raise ValueError("run not found")
-        if run.state == "Approved":
-            # Repeated approval is a no-op: outbound mock actions were already recorded.
-            audit(run_id, "approval_duplicate_ignored", actor=actor, payload={"reason": reason})
-            return
-        if run.state not in ("AwaitingApproval", "ReadyForReview"):
-            raise ValueError("invalid approval state")
         draft = s.execute(select(Draft).where(Draft.run_id == run_id)).scalar_one_or_none()
         if draft is None:
             raise ValueError("no draft")
-        if action == "edit_approve" and edited_text:
-            draft.edited_text = edited_text
-        s.add(Approval(run_id=run_id, action=action, edited_text=edited_text, reason=reason, actor=actor))
-        # Atomically claim the run before any outbound side effects.
+
+        if run.state == "Approved" and run.outbound_completed:
+            audit(run_id, "approval_duplicate_ignored", actor=actor, payload={"reason": reason})
+            return
+        if run.state not in ("AwaitingApproval", "ReadyForReview", "Approving", "Approved"):
+            raise ValueError("invalid approval state")
+
+        allowed = ["AwaitingApproval", "ReadyForReview", "Approving"]
+        if run.state == "Approved" and not run.outbound_completed:
+            allowed.append("Approved")
+
         if action == "reject":
-            run.state = "Rejected"
+            stmt = (
+                update(WorkflowRun)
+                .where(WorkflowRun.id == run_id, WorkflowRun.state.in_(allowed))
+                .values(state="Rejected", finished_at=now, error=None)
+            )
+            res = s.execute(stmt)
+            if res.rowcount != 1:
+                raise ValueError("invalid approval state")
+            if s.execute(select(Approval).where(Approval.run_id == run_id)).scalar_one_or_none() is None:
+                s.add(Approval(run_id=run_id, action=action, edited_text=edited_text, reason=reason, actor=actor))
+            run = s.get(WorkflowRun, run_id)
+            inq = run.inquiry if run else None
+            if inq:
+                inq.status = "Rejected"
         else:
-            run.state = "Approved"
-        run.finished_at = datetime.now(UTC)
-        inq = run.inquiry
-        if inq:
-            inq.status = run.state
+            stmt = (
+                update(WorkflowRun)
+                .where(WorkflowRun.id == run_id, WorkflowRun.state.in_(allowed))
+                .values(state="Approving", finished_at=now, error=None)
+            )
+            res = s.execute(stmt)
+            if res.rowcount != 1:
+                raise ValueError("invalid approval state")
+            if s.execute(select(Approval).where(Approval.run_id == run_id)).scalar_one_or_none() is None:
+                s.add(Approval(run_id=run_id, action=action, edited_text=edited_text, reason=reason, actor=actor))
+            draft = s.execute(select(Draft).where(Draft.run_id == run_id)).scalar_one_or_none()
+            if draft is not None and action == "edit_approve":
+                draft.edited_text = edited_text
+            run = s.get(WorkflowRun, run_id)
+            inq = run.inquiry if run else None
+            if inq:
+                inq.status = "Approving"
 
     audit(run_id, f"approval_{action}", actor=actor, payload={"reason": reason})
 
@@ -425,7 +471,7 @@ async def approve_run(
         audit(run_id, "rejected", actor=actor, payload={"reason": reason})
         return
 
-    # approve or edit_approve -> simulate outbound (mock)
+    # approve/edit_approve outbound (mock)
     final_text = edited_text if (action == "edit_approve" and edited_text) else None
     to_email = None
     cust_id = None
@@ -438,16 +484,34 @@ async def approve_run(
             to_email = inq.customer.email
             cust_id = inq.customer.id
 
-    # Output sanitization before outbound mock
     sanitized_text = (final_text or "").replace("\r\n", "\n").strip()
 
-    if to_email:
-        await registry.call("send_email_mock", to=to_email, subject="Re: Ihre Anfrage", body=sanitized_text, run_id=run_id)
-    await registry.call("crm_update_mock", run_id=run_id, customer_id=cust_id, summary=sanitized_text[:200])
+    try:
+        if to_email:
+            await registry.call("send_email_mock", to=to_email, subject="Re: Ihre Anfrage", body=sanitized_text, run_id=run_id)
+        await registry.call("crm_update_mock", run_id=run_id, customer_id=cust_id, summary=sanitized_text[:200])
 
-    audit(
-        run_id,
-        "approved_and_mock_sent",
-        actor=actor,
-        payload={"mock": True, "email_sent": bool(to_email), "to": to_email},
-    )
+        with db_session() as s:
+            run = s.get(WorkflowRun, run_id)
+            if run is not None:
+                run.state = "Approved"
+                run.outbound_completed = True
+                run.finished_at = datetime.now(UTC)
+                run.error = None
+                inq = run.inquiry
+                if inq:
+                    inq.status = "Approved"
+        audit(
+            run_id,
+            "approved_and_mock_sent",
+            actor=actor,
+            payload={"mock": True, "email_sent": bool(to_email), "to": to_email},
+        )
+    except Exception as e:
+        with db_session() as s:
+            run = s.get(WorkflowRun, run_id)
+            if run is not None:
+                run.state = "Approving"
+                run.outbound_completed = False
+                run.error = str(e)
+        raise
